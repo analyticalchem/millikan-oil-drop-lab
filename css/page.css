@@ -1,0 +1,384 @@
+/* Millikan Oil Drop Lab: this page's layout, the two views of the apparatus and their transition,
+   the cutaway drawing, the observer's bench beside the eyepiece, the measurements and the analysis chart. */
+
+/* ---------- Controls ---------- */
+
+.run-row.first { margin-top: 0; padding-top: 0; border-top: 0; margin-bottom: 16px; }
+.control .label { display: block; }
+.chip { padding: 5px 12px; font-size: 0.875rem; }
+
+/* Toggle switches: a native checkbox with role="switch", drawn as a track and knob. The state is also
+   written beside the label ("On" / "Off"), so it never rests on colour or position alone. Sizes are in
+   em so the switch grows with the text in presentation mode. */
+.switch-wrap { display: inline-flex; align-items: center; gap: 10px; flex: none; }
+input.switch {
+  appearance: none; -webkit-appearance: none;
+  position: relative; display: inline-block; width: 2.9em; height: 1.6em; margin: 0; vertical-align: middle;
+  border-radius: 1em; background: var(--surface-2); border: 1px solid var(--border-strong);
+  cursor: pointer; transition: background 0.15s, border-color 0.15s;
+}
+input.switch::before {
+  content: ""; position: absolute; top: 0.18em; left: 0.18em; width: 1.18em; height: 1.18em; border-radius: 50%;
+  background: var(--text-secondary); transition: transform 0.15s, background 0.15s;
+}
+input.switch:checked { background: var(--accent); border-color: var(--accent); }
+input.switch:checked::before { transform: translateX(1.3em); background: var(--accent-ink); }
+.switch-state { font-weight: 600; color: var(--text-primary); }
+
+/* An in-page confirmation for actions that throw data away (Reset, Clear). */
+.confirm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 8px;
+}
+.confirm-msg { margin: 0; font-weight: 600; }
+
+/* ---------- Apparatus view ---------- */
+
+.view-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; }
+.track-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.view-status { margin: 8px 0 0; font-size: 0.9rem; font-weight: 600; }
+.view-status:empty { margin: 0; }
+
+/* The bench: the stage, and beside it (in the eyepiece view) the focus and the stopwatch. On a wide
+   screen the bench's column opens and closes over the same 0.9 s as the eyepiece, so the drawing
+   shrinks smoothly into a smaller eyepiece and widens smoothly on the way back; on a narrow screen
+   the bench sits below the stage and simply appears. */
+.bench { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px 24px; margin-top: 12px; align-items: start; }
+.side-col { min-width: 0; }
+.side-panel { min-width: 0; padding: 14px 16px 6px; border: 1px solid var(--grid); border-radius: 10px; }
+.side-title { margin: 0 0 8px; font-size: 1rem; font-weight: 650; }
+.side-panel .control + .side-title { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--grid); }
+.side-panel .run-row { margin-top: 12px; padding-top: 12px; }
+@media (max-width: 980px) {
+  .side-col { display: none; }
+  .bench.with-side .side-col { display: block; }
+}
+@media (min-width: 981px) {
+  .bench {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0fr);
+    column-gap: 0;
+    transition: grid-template-columns 0.9s cubic-bezier(0.4, 0, 0.2, 1), column-gap 0.9s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .bench.with-side { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); column-gap: 24px; }
+  /* The stage fills the row, so the eyepiece is as tall as the bench beside it. */
+  .bench > .stage { align-self: stretch; }
+  /* The column clips the panel, which keeps its final width while the column opens or closes, so its
+     text never rewraps; its height is animated by script between 0 and the panel's own height. */
+  .side-col { overflow: hidden; height: 0; transition: height 0.9s cubic-bezier(0.4, 0, 0.2, 1); }
+  .bench.with-side .side-col { height: auto; }
+  .side-panel { visibility: hidden; opacity: 0; transition: opacity 0.5s ease, visibility 0s linear 0.9s; }
+  .bench.with-side .side-panel { visibility: visible; opacity: 1; transition: opacity 0.6s ease 0.3s, visibility 0s; }
+}
+
+/* The stage holds both views: the cutaway in flow (so it sets the height) and the eyepiece laid over it.
+   --ex/--ey is the eyepiece lens on the stage, --er the radius that covers the whole stage. */
+.stage {
+  position: relative;
+  --tx: 0px; --ty: 0px;
+  transition: min-height 0.9s cubic-bezier(0.4, 0, 0.2, 1);
+}
+/* Clipped only while the drawing is scaled up behind the eyepiece, so the scroll box keeps its gutters. */
+.stage.is-zooming, .stage.in-eye { overflow: hidden; }
+/* The eyepiece's least height while the stage is narrow, kept until the flight out ends. */
+.stage.eye-size { min-height: 420px; }
+.view-cutaway { position: relative; }
+.visual-scroll { overflow-x: auto; overflow-y: hidden; padding: 0 12px; margin: 0 -12px; }
+.stage.is-zooming .visual-scroll, .stage.in-eye .visual-scroll { overflow: hidden; }
+
+/* The drawing keeps its aspect ratio; below its minimum width it scrolls sideways inside the box.
+   Zooming in scales it up about the eyepiece lens (the origin is set by script). */
+/* The 3D cutaway keeps a 16 : 10 shape above a least height; it fades out as the camera flies into the
+   eyepiece. Labels, the frame of the magnified view and the hover tip are page elements laid over it. */
+three-d-stage:not(:defined) { visibility: hidden; }
+.view-cutaway { transition: opacity 0.9s ease-in; }
+.stage.in-eye .view-cutaway { opacity: 0; }
+.app3d {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 10;
+  min-height: 340px;
+  --stage-bg: var(--surface-2);
+  border-radius: 10px;
+}
+.app3d-overlay { position: absolute; inset: 0; pointer-events: none; overflow: hidden; border-radius: 10px; }
+.app3d-leaders { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.app3d-leaders line { stroke: var(--text-muted); stroke-width: 1; }
+.app3d-leaders circle { fill: var(--text-primary); }
+.app3d-leaders line.inset { stroke: #b9b7ae; }
+.app3d-leaders circle.inset { fill: #f1efe8; }
+.app3d-label {
+  position: absolute; left: 0; top: 0;
+  padding: 2px 7px;
+  font: 600 0.78rem/1.35 var(--font);
+  color: var(--text-primary);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 5px;
+  white-space: nowrap;
+  will-change: transform;
+}
+.app3d-label.inset { color: #f4f2ec; background: #1d2023; border-color: #6f6d68; }
+.app3d-inset { position: absolute; border: 1px solid var(--border-strong); border-radius: 8px; box-shadow: 0 0 0 3px var(--surface-2); }
+.app3d-inset-title {
+  position: absolute; left: 8px; bottom: 6px;
+  font: 600 0.75rem/1.2 var(--font); color: #e9e7df;
+}
+.app3d-tip {
+  position: absolute; left: 0; top: 0;
+  padding: 4px 8px;
+  font: 500 0.8rem/1.3 var(--font);
+  color: var(--surface); background: var(--text-primary);
+  border-radius: 6px;
+  white-space: nowrap;
+}
+.app3d-tools { position: absolute; left: 10px; top: 10px; display: flex; flex-wrap: wrap; gap: 6px; max-width: calc(100% - 440px); min-width: 170px; }
+.app3d-btn { flex: none; white-space: nowrap; padding: 4px 10px; font-size: 0.8rem; font-weight: 600; background: var(--surface); }
+.app3d-btn[aria-pressed="true"] { background: var(--text-primary); color: var(--surface); border-color: transparent; }
+@media (max-width: 700px) { .app3d-tools { max-width: 46%; } }
+/* Phones: the view buttons sit under the view instead of over it. */
+@media (max-width: 560px) { .app3d-tools { position: static; margin: 8px 0 0; max-width: none; min-width: 0; } }
+
+/* The eyepiece view starts as a speck on the eyepiece lens (--tx/--ty offset it there from the stage's
+   centre) and grows into place; its canvas is transparent outside the eyepiece's rim. */
+.view-eyepiece {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 50%;
+  transform: translate(var(--tx), var(--ty)) scale(0.04);
+  opacity: 0;
+  transition: transform 0.9s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.45s ease;
+}
+.stage.in-eye .view-eyepiece { transform: none; opacity: 1; }
+.eye-canvas { display: block; width: 100%; height: 100%; cursor: crosshair; }
+
+.stage-caption { margin: 10px 0 0; font-size: 0.9rem; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+.stage-caption:empty { margin: 0; }
+.view-help { margin: 12px 0 0; font-size: 0.85rem; color: var(--text-secondary); }
+.scale-note { margin: 6px 0 0; font-size: 0.85rem; color: var(--text-secondary); }
+
+/* Key and Now blocks (style guide 7.10.1) */
+.info-block { margin-top: 14px; }
+.info-title { margin: 0; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-secondary); }
+.info-block .legend { margin-top: 6px; }
+/* Key swatches, each matching its mark in the drawing. */
+.lg-ring { display: inline-block; width: 16px; height: 16px; border-radius: 50%; border: 4px solid var(--key); }
+.lg-ring.thin { border-width: 2px; }
+.lg-bulb { display: inline-block; width: 22px; height: 15px; border-radius: 50%; background: var(--rubber-pale); border: 1px solid var(--app-wall); }
+.lg > .lg-bulb { margin-top: calc(0.675em - 7.5px); }
+.lg-plate { display: inline-block; width: 26px; height: 7px; background: var(--brass); border: 1px solid var(--app-wall); }
+.lg-arrow { display: inline-block; width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-top: 14px solid var(--key); }
+.lg > .lg-ring { margin-top: calc(0.675em - 8px); }
+.lg > .lg-plate { margin-top: calc(0.675em - 3.5px); }
+.lg > .lg-arrow { margin-top: calc(0.675em - 7px); }
+
+/* ---------- The cutaway drawing ---------- */
+
+/* Drawn text never renders below the chart text size: --sch-u is set by script (8.7). */
+.schem { --sch-font: 15px; --sch-font-small: 13px; --sch-u: 1; font-family: var(--font); }
+.schem text { font-size: max(var(--sch-font), calc(var(--chart-font) * 1.15 * var(--sch-u))); fill: var(--text-primary); }
+.schem .sch-value { font-weight: 600; }
+.schem .sch-value, .schem .sch-small { font-size: max(var(--sch-font-small), calc(var(--chart-font) * var(--sch-u))); }
+.schem .sch-small { fill: var(--text-secondary); }
+.schem .field-label { fill: var(--text-primary); font-weight: 600; }
+
+/* Fills are decorative shading; every part keeps its --app-wall outline, which carries the 3:1
+   boundary. The gradients are defined in the SVG and take their colours from these stop classes. */
+.schem .st-metal-hi { stop-color: var(--metal-hi); }
+.schem .st-metal-mid { stop-color: var(--metal-mid); }
+.schem .st-metal-lo { stop-color: var(--metal-lo); }
+.schem .st-brass-hi { stop-color: var(--brass-hi); }
+.schem .st-brass { stop-color: var(--brass); }
+.schem .st-brass-lo { stop-color: var(--brass-lo); }
+.schem .st-white { stop-color: #ffffff; }
+.schem .st-glass { stop-color: var(--glass); }
+.schem .st-glass-lo { stop-color: var(--glass-lo); }
+.schem .st-rubber-hi { stop-color: var(--rubber-hi); }
+.schem .st-rubber { stop-color: var(--rubber); }
+.schem .st-drop-hi { stop-color: var(--drop-hi); }
+.schem .st-drop { stop-color: var(--drop); }
+
+.schem .body { fill: var(--app-body); stroke: var(--app-wall); stroke-width: 1.5; stroke-linejoin: round; }
+.schem .shade { fill: var(--app-shade); stroke: var(--app-wall); stroke-width: 1.5; stroke-linejoin: round; }
+.schem .box-top { fill: var(--metal-hi); stroke: var(--app-wall); stroke-width: 1.5; stroke-linejoin: round; }
+.schem .metal { fill: url(#g-tube); stroke: var(--app-wall); stroke-width: 1.5; stroke-linejoin: round; }
+.schem .metal-end { fill: url(#g-end); stroke: var(--app-wall); stroke-width: 1.5; }
+.schem .wall { fill: url(#g-wall); stroke: var(--app-wall); stroke-width: 1.5; stroke-linejoin: round; }
+.schem .wall-v { fill: url(#g-tube-h); stroke: var(--app-wall); stroke-width: 1; }
+.schem .inner { fill: var(--surface); stroke: var(--app-wall); stroke-width: 1; }
+.schem .floor { fill: url(#g-floor); stroke: var(--app-wall); stroke-width: 1; }
+.schem .plate { fill: url(#g-brass); stroke: var(--app-wall); stroke-width: 1.5; stroke-linejoin: round; }
+.schem .plate-cut { fill: url(#g-brass-cut); stroke: var(--app-wall); stroke-width: 1.5; }
+.schem .hole { fill: var(--app-wall); }
+.schem .display { fill: var(--surface); stroke: var(--app-wall); stroke-width: 1.5; }
+.schem .knob { fill: url(#g-knob); stroke: var(--app-wall); stroke-width: 1.5; }
+.schem .glass { fill: url(#g-glass); stroke: var(--app-wall); stroke-width: 1.5; }
+.schem .rubber { fill: url(#g-rubber); stroke: var(--app-wall); stroke-width: 1.5; }
+/* Parts that can be worked with the pointer (the controls above are the keyboard route): the bulb
+   squeezes briefly when pressed; the switch, the source, the eyepiece and the voltage arrows light up. */
+.schem .clickable { cursor: pointer; }
+.schem .rubber { transform-box: fill-box; transform-origin: center; transition: transform 0.15s ease-out; }
+.schem .rubber.squeezed { transform: scale(0.86, 0.9); }
+.schem .clickable:hover { stroke: var(--accent); stroke-width: 2.5; }
+.schem g.clickable:hover > :not(text):not(.hit) { stroke: var(--accent); stroke-width: 2.5; }
+.schem g.clickable:hover > text { fill: var(--accent); }
+.schem .hit { fill: transparent; stroke: none; pointer-events: all; }
+.schem .arrow-btn polygon { fill: var(--text-primary); stroke: none; }
+.schem .arrow-btn:hover polygon { fill: var(--accent); }
+.schem .beam { fill: var(--beam); }
+.schem .wire { fill: none; stroke-width: 3; stroke-linejoin: round; }
+.schem .wire.pos { stroke: var(--wire-pos); }
+.schem .wire.neg { stroke: var(--wire-neg); }
+.schem .tube-outline { fill: none; stroke: var(--app-wall); stroke-width: 9; stroke-linejoin: round; }
+.schem .tube { fill: none; stroke: var(--app-body); stroke-width: 6; stroke-linejoin: round; }
+.schem .field line { stroke: var(--field-arrow); stroke-width: 2.5; }
+.schem .field polygon { fill: var(--field-arrow); }
+.schem .dim { stroke: var(--text-primary); stroke-width: 1.5; }
+.schem .dim-head { fill: var(--text-primary); }
+.schem .leader { stroke: var(--text-muted); stroke-width: 1; }
+.schem .fov { fill: none; stroke: var(--text-muted); stroke-width: 1.5; stroke-dasharray: 4 3; }
+.schem .drops circle { fill: url(#g-drop); cursor: pointer; }
+.schem .track-ring { fill: none; stroke: var(--accent); stroke-width: calc(var(--chart-line) * 2); vector-effect: non-scaling-stroke; }
+.schem .sparks circle { fill: none; stroke: var(--series-d); stroke-width: 2.5; }
+.schem .mist circle { fill: var(--drop); }
+.schem .alpha line { stroke: var(--text-secondary); stroke-width: 1.5; stroke-dasharray: 2 4; stroke-linecap: round; }
+.schem .lever { stroke: var(--text-primary); stroke-width: 3; stroke-linecap: round; }
+.schem .pivot { fill: var(--text-primary); }
+
+/* ---------- Stopwatch, measurements, drop properties, analysis ---------- */
+
+.sw-display { margin: 4px 0 10px; font-size: 2rem; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.sw-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.sw-fields { display: flex; flex-wrap: wrap; gap: 10px 18px; margin-top: 12px; }
+.record-status { margin: 10px 0 0; font-size: 0.9rem; font-weight: 600; }
+.record-status:empty { margin: 0; }
+
+.grid-data { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 16px; }
+.results .card-sub { margin-top: 0; }
+#meas-table td.text, #props-table td.text { white-space: nowrap; }
+.row-remove { padding: 2px 8px; font-size: 0.8rem; font-weight: 500; }
+
+/* Charge calculation: typed inputs, then the steps with the numbers substituted. */
+/* The Charge Calculation panel folds to its title: a native disclosure with the heading inside the summary. */
+.calc-card summary { cursor: pointer; }
+.calc-card summary h2 { display: inline; }
+.calc-card details > .card-sub { margin-top: 8px; }
+.calc-card .calc-inputs { margin-top: 14px; }
+.calc-inputs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 28px; }
+.calc-inputs label { display: block; margin-bottom: 6px; font-weight: 600; }
+.calc-inputs .entry { display: flex; width: 100%; max-width: 16em; }
+.calc-inputs .num { flex: 1 1 auto; min-width: 0; width: auto; padding: 6px 10px; text-align: left; }
+.calc-inputs select { width: 100%; max-width: 16em; }
+.calc-note { margin-top: 12px; }
+.calc-steps { margin: 14px 0 0; padding-left: 1.5em; display: grid; gap: 14px; }
+.calc-steps li { min-width: 0; }
+.calc-name { display: block; font-weight: 650; }
+.calc-body { display: block; min-width: 0; }
+/* Equations: one line each, laid out by MathML in the system's math font, left-aligned under the step
+   name, with continuation lines indented. Inline math with math-style normal keeps full-size fractions.
+   The font is large enough that superscripts and subscripts stay at 12 px or more. A line that is
+   still too wide for a phone scrolls on its own rather than widening the page. */
+.eq { margin: 4px 0 0; max-width: 100%; overflow-x: auto; overflow-y: hidden; padding: 4px 0 9px; line-height: 1.3; }
+.eq-cont { padding-left: 1.6em; }
+.eq math { font-size: 1.15rem; math-style: normal; }
+/* Scripts are three quarters of their base but never below the 12 px text floor, however deeply nested. */
+.calc-body math :is(msup, msub) > :not(:first-child), .calc-body math :is(msup, msub) > :not(:first-child) * { font-size: max(0.75rem, 0.75em); math-depth: 0; }
+.calc-body math :is(msup, msub) > :not(:first-child) * { font-size: max(0.75rem, 1em); }
+/* A fraction inside a fraction is set a little smaller, but never below the floor either. */
+.calc-body math mfrac mfrac > * { font-size: max(0.75rem, 0.85em); math-depth: 0; }
+.calc-body math mfrac mfrac > * * { font-size: max(0.75rem, 1em); }
+.calc-pending { margin: 6px 0 0; color: var(--text-secondary); }
+.calc-why { margin: 8px 0 0; }
+/* Under each symbolic equation, across the whole panel, the worksheet: the same equation with boxes to type into. */
+.eq-row { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; }
+.fx { margin-top: 2px; padding: 6px 12px 8px; border: 1px dashed var(--border-strong); border-radius: 8px; min-width: 0; }
+.fx-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 7px; margin: 4px 0; font-family: math, "Cambria Math", "STIX Two Math", serif; font-size: 1.05rem; }
+.fx-sym { font-style: italic; }
+.fx-op { color: var(--text-primary); }
+/* Flex items ignore vertical-align, so an exponent is raised by hand; after a bracketed fraction it sits at the top. */
+.fx-sup { font-size: max(0.75rem, 0.75em); line-height: 1; position: relative; top: -0.5em; }
+.fx-frac + .fx-op + .fx-sup { align-self: flex-start; top: 0; }
+.fx-frac { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; }
+.fx-num, .fx-den, .fx-radicand { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 6px; }
+.fx-num { padding: 0 6px 3px; }
+.fx-den { padding: 3px 6px 0; border-top: 1.5px solid var(--text-primary); }
+/* A root may shrink to the room left on its line; a long radicand then wraps inside it. */
+.fx-root { display: inline-flex; align-items: stretch; min-width: 0; }
+/* Parts that must stay on one line with each other (r = √…): the group takes a line of its own when it is long. */
+.fx-group { display: inline-flex; align-items: center; gap: inherit; min-width: 0; max-width: 100%; }
+.fx-result { flex-wrap: wrap; }
+@media (max-width: 560px) { .fx-group { flex-wrap: wrap; } }
+.fx-root::before { content: "\221A"; font-size: 1.5em; line-height: 1; align-self: center; }
+.fx-radicand { border-top: 1.5px solid var(--text-primary); padding: 4px 5px 0; }
+.fx-field { display: inline-flex; align-items: baseline; gap: 4px; }
+.fx-in { width: 9.6em; font-family: var(--font); font-size: 0.9rem; padding: 4px 7px; text-align: right; }
+.fx-in.given { background: var(--surface-2); }
+@media (max-width: 400px) { .fx-in { width: 8.6em; } }
+.fx-sign { font: inherit; padding: 2px 4px; border-radius: 6px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text-primary); }
+.fx-unit, .fx-mirror { font-family: var(--font); }
+.fx-unit { color: var(--text-secondary); font-size: 0.85rem; }
+.fx-mirror { font-weight: 600; font-variant-numeric: tabular-nums; }
+.fx-out { font-family: var(--font); font-weight: 650; font-variant-numeric: tabular-nums; }
+.fx-check { font-family: var(--font); font-size: 0.85rem; font-weight: 600; color: var(--text-primary); }
+.fx-check.ok { color: var(--success-text); }
+
+/* What each symbol in a step means, with its value when it is given rather than found here. */
+.terms { margin: 4px 0 6px; font-size: 0.9rem; line-height: 1.4; }
+.terms > div { display: flex; flex-wrap: wrap; gap: 0 10px; padding: 3px 0; border-top: 1px solid var(--border); }
+.terms > div:last-child { border-bottom: 1px solid var(--border); }
+.terms dt { flex: 0 0 3.6rem; font-weight: 600; }
+.terms dt math { font-size: 1rem; }
+.terms dd { flex: 1 1 14rem; margin: 0; color: var(--text-secondary); }
+.terms .given { color: var(--text-primary); font-weight: 600; white-space: nowrap; }
+
+.ana-controls { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 12px 28px; align-items: end; }
+.ana-controls .run-row.first { margin-bottom: 0; }
+.ana-tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 16px; }
+.chart-card .verdict { margin-top: 12px; }
+.chart-card .verdict:empty { margin: 0; }
+.chart-wrap { position: relative; margin-top: 12px; }
+.qchart { --h: clamp(200px, 24vw, 280px); }
+.table-view { margin-top: 12px; }
+.table-view summary { cursor: pointer; font-weight: 600; color: var(--text-secondary); }
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 980px) {
+  .grid-data { grid-template-columns: minmax(0, 1fr); }
+  .ana-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ana-controls { grid-template-columns: minmax(0, 1fr); }
+  .calc-inputs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 560px) {
+  .ana-tiles { grid-template-columns: minmax(0, 1fr); }
+  .calc-inputs { grid-template-columns: minmax(0, 1fr); }
+  .calc-steps { padding-left: 1.1em; }
+  .eq-cont { padding-left: 1em; }
+  .eq math { font-size: 1.05rem; }      /* scripts stay at 12.6 px; the longest lines then fit a 320 px phone */
+  .sw-display { font-size: 1.7rem; }
+  .stage.eye-size { min-height: 0; }
+}
+
+/* ---------- Presentation mode ---------- */
+
+@media (min-width: 900px) {
+  html[data-present] .view-help, html[data-present] .scale-note, html[data-present] .view-status,
+  html[data-present] .record-status, html[data-present] .stage-caption { font-size: 1.05rem; }
+  html[data-present] .info-title { font-size: 0.9rem; }
+  html[data-present] .side-title { font-size: 1.15rem; }
+  html[data-present] .eq math { font-size: 1.3rem; }
+  html[data-present] .calc-pending, html[data-present] .calc-why, html[data-present] .terms { font-size: 1.05rem; }
+  html[data-present] .calc-card summary { font-size: 1.5rem; }
+  html[data-present] .fx-line { font-size: 1.2rem; }
+  html[data-present] .fx-in { font-size: 1rem; }
+  html[data-present] .sw-display { font-size: 2.4rem; }
+  html[data-present] .stage.eye-size { min-height: 560px; }
+  html[data-present] .app3d { min-height: 480px; }
+}

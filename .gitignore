@@ -1,0 +1,3 @@
+# Local development only: preview server, launch config and the in-page audit tool.
+.claude/
+*.zip

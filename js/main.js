@@ -1299,6 +1299,38 @@
     if (!state.paused && dtReal > 0) advance(dtReal * state.speed);
   }
 
+  // ---------- table scroll boxes ----------
+
+  /**
+   * A table wider than its box scrolls sideways. While it does, the box is a focusable region named after
+   * the table, so the keyboard can scroll it too (WCAG 2.1.1, style guide 8.7); when the table fits again
+   * the box leaves the tab order. Content and size changes are watched, so the state follows the table.
+   */
+  function watchTableScroll() {
+    var boxes = Array.prototype.slice.call(document.querySelectorAll('.table-scroll'));
+    function update() {
+      boxes.forEach(function (box) {
+        var scrolls = box.scrollWidth > box.clientWidth + 1;
+        if (scrolls === (box.getAttribute('tabindex') === '0')) return;
+        if (scrolls) {
+          var caption = box.querySelector('caption');
+          box.setAttribute('tabindex', '0');
+          box.setAttribute('role', 'region');
+          box.setAttribute('aria-label', (caption ? caption.textContent.trim() : 'Table') + ', scrolls sideways');
+        } else {
+          box.removeAttribute('tabindex');
+          box.removeAttribute('role');
+          box.removeAttribute('aria-label');
+        }
+      });
+    }
+    if ('ResizeObserver' in root) {
+      var ro = new ResizeObserver(update);
+      boxes.forEach(function (box) { ro.observe(box); var table = box.querySelector('table'); if (table) ro.observe(table); });
+    } else root.addEventListener('resize', update);
+    update();
+  }
+
   // ---------- start ----------
 
   P.init({
@@ -1335,6 +1367,7 @@
   buildWork();
   calc();
   drawViews();
+  watchTableScroll();
   root.requestAnimationFrame(frame);
   P.start();
 

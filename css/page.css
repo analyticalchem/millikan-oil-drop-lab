@@ -107,6 +107,15 @@ three-d-stage:not(:defined) { visibility: hidden; }
   --stage-bg: var(--surface-2);
   border-radius: 10px;
 }
+/* Wide screens: a tall window gets a taller view (never more than 84 % of it); the camera reframes the model to the shape. */
+@media (min-width: 981px) {
+  .app3d { min-height: clamp(340px, 62vh, 960px); max-height: 84vh; }
+}
+/* Large screens: the column grows with the window (the house 1200 px becomes the floor, 1800 px the ceiling),
+   so the apparatus view uses the screen instead of sitting in a fixed-width band. */
+@media (min-width: 1500px) {
+  .site-header, main, .site-footer { max-width: min(1800px, 90vw); }
+}
 .app3d-overlay { position: absolute; inset: 0; pointer-events: none; overflow: hidden; border-radius: 10px; }
 .app3d-leaders { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .app3d-leaders line { stroke: var(--text-muted); stroke-width: 1; }

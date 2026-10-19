@@ -36,10 +36,13 @@
   var L_FULL = 1, L_CUT = 2;                        // layers: the intact chamber, and the cut one
   var DROP_R = 0.22e-3, RING_PX = 9;
 
+  // Each view names what must stay in frame: fitW and fitH are the half-width and half-height (m, at the
+  // target) the camera backs off far enough to show, so the model fills a view of any shape.
   var VIEWS = {
-    all: { phi: 46 * DEG, elev: 21 * DEG, dist: 1.02, target: [0.09, 0.15, -0.06], fov: 36 },
-    chamber: { phi: 58 * DEG, elev: 27 * DEG, dist: 0.70, target: [0.0, 0.14, 0.0], fov: 36 }
+    all: { phi: 46 * DEG, elev: 21 * DEG, fitW: 0.53, fitH: 0.27, target: [0.09, 0.15, -0.06], fov: 36 },
+    chamber: { phi: 58 * DEG, elev: 27 * DEG, fitW: 0.364, fitH: 0.20, target: [0.0, 0.14, 0.0], fov: 36 }
   };
+  var viewName = 'all', moved = false, lastAspect = 0;   // which view the camera is at, and whether the user has moved it since
 
   var T = null, stage = null, renderer, scene, camera, controls, insetCam, tmpCam;
   var m = {}, model, fullGroup, dyn, parts = {}, pickables = [], lensPos, lensDir;
@@ -806,11 +809,20 @@
 
   // ---------- views ----------
 
-  function viewPose(v) {
+  /**
+   * The camera pose for a view in a viewport of the given aspect (width over height; the camera's own by
+   * default). A portrait view is framed as if square: it keeps the chamber large and crops the edges rather
+   * than backing off until everything is tiny.
+   */
+  function viewPose(v, aspect) {
+    var a = Math.max(aspect || camera.aspect || 1.6, 1), tn = Math.tan(v.fov * DEG / 2);
+    var dist = Math.max(v.fitH / tn, v.fitW / (a * tn));
     var t = new T.Vector3(v.target[0], v.target[1], v.target[2]);
-    var p = t.clone().add(new T.Vector3(Math.sin(v.phi) * Math.cos(v.elev), Math.sin(v.elev), Math.cos(v.phi) * Math.cos(v.elev)).multiplyScalar(v.dist));
+    var p = t.clone().add(new T.Vector3(Math.sin(v.phi) * Math.cos(v.elev), Math.sin(v.elev), Math.cos(v.phi) * Math.cos(v.elev)).multiplyScalar(dist));
     return { p: p, t: t, fov: v.fov };
   }
+
+  function stageAspect() { return (stage.clientWidth || 1) / (stage.clientHeight || 1); }
 
   function setPose(pose) {
     camera.position.copy(pose.p);
@@ -850,7 +862,9 @@
 
   function goTo(name) {
     if (!ready || inEye) return;
-    startAnim(viewPose(VIEWS[name]), 750);
+    viewName = name;
+    moved = false;
+    startAnim(viewPose(VIEWS[name], stageAspect()), 750);
   }
 
   function applyLayers() {
@@ -862,7 +876,7 @@
   // ---------- rendering ----------
 
   function layoutInset(W, H) {
-    var w = Math.round(clamp(W * 0.36, Math.min(170, W * 0.5), 400)), h = Math.round(w * 0.74);   // never more than half the width of a narrow view
+    var w = Math.round(clamp(W * 0.34, Math.min(170, W * 0.5), 520)), h = Math.round(w * 0.74);   // never more than half the width of a narrow view
     if (h > H * 0.62) { h = Math.round(H * 0.62); w = Math.round(h / 0.74); }
     var b = { x: W - w - 12, y: 12, w: w, h: h };
     if (b.x !== insetBox.x || b.w !== insetBox.w || b.h !== insetBox.h) {
@@ -935,6 +949,13 @@
     var st = stage.closest('.stage');
     var hidden = st && st.classList.contains('in-eye') && !st.classList.contains('is-zooming');
     stage.suspended = hidden || offscreen;
+    // When the view changes shape (a resized window, a wider screen), a camera the user has not moved
+    // reframes the model to the new shape.
+    var asp = stageAspect();
+    if (Math.abs(asp - lastAspect) > 1e-3) {
+      lastAspect = asp;
+      if (ready && !moved && !anim && !inEye) setPose(viewPose(VIEWS[viewName], asp));
+    }
     if (anim) stepAnim();
     var k = 1 - Math.exp(-dt * 14);
     for (var key in target) now[key] += (target[key] - now[key]) * k;
@@ -1145,6 +1166,7 @@
     camera.position.copy(controls.target).add(V1.setFromSpherical(sph));
     camera.lookAt(controls.target);
     controls.update();
+    moved = true;
     e.preventDefault();
   }
 
@@ -1210,8 +1232,10 @@
     controls.minDistance = 0.03;
     controls.maxDistance = 3;
     controls.zoomToCursor = true;
-    setPose(viewPose(VIEWS.all));
+    lastAspect = stageAspect();
+    setPose(viewPose(VIEWS.all, lastAspect));
     controls.update();
+    controls.addEventListener('start', function () { moved = true; });   // a drag or wheel: the camera is the user's from here on
     applyLayers();
 
     insetCam = new T.PerspectiveCamera(30, 4 / 3, 0.001, 2);
@@ -1331,10 +1355,10 @@
       lensPos.clone().addScaledVector(lensDir, 0.22));
   }
 
-  /** And back out to where the camera was. */
+  /** And back out: to where the user had put the camera, or to the view reframed for the stage's present shape. */
   function flyHome() {
     if (!ready) return;
-    var to = home || viewPose(VIEWS.all);
+    var to = moved && home ? home : viewPose(VIEWS[viewName], stageAspect());
     startAnim(to, 900, lensPos.clone().addScaledVector(lensDir, 0.22), function () { inEye = false; controls.enabled = true; });
   }
 
@@ -1350,7 +1374,7 @@
   /** Where the lens will be once the camera is back home, in a view w × h px. */
   function lensAt(w, h) {
     if (!ready) return { x: w / 2, y: h / 2 };
-    var pose = home || viewPose(VIEWS.all);
+    var pose = moved && home ? home : viewPose(VIEWS[viewName], w / h);
     tmpCam.fov = pose.fov; tmpCam.aspect = w / h; tmpCam.near = 0.002; tmpCam.far = 30;
     tmpCam.position.copy(pose.p);
     tmpCam.lookAt(pose.t);

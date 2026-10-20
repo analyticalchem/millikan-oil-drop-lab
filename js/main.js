@@ -13,8 +13,8 @@
 
   function $(id) { return document.getElementById(id); }
   var els = {};
-  ['spray', 'pause', 'speed', 'reset', 'volts', 'volts-out', 'field-on', 'field-state', 'source-on', 'source-state', 'focus', 'focus-out', 'view-toggle', 'track-prev', 'track-next', 'track-stop',
-    'view-status', 'view-sr', 'bench', 'side', 'side-col', 'stage', 'cutaway-box', 'eyepiece-box', 'eye', 'app', 'stage-caption',
+  ['spray', 'pause', 'speed', 'reset', 'volts', 'volts-num', 'volts-num-msg', 'field-on', 'field-state', 'source-on', 'source-state', 'focus', 'focus-out', 'view-toggle', 'track-prev', 'track-next', 'track-stop',
+    'view-status', 'view-sr', 'results-now', 'bench', 'side', 'side-col', 'stage', 'cutaway-box', 'eyepiece-box', 'eye', 'app', 'stage-caption',
     'sw-display', 'sw-start', 'sw-reset', 'sw-dist', 'sw-motion', 'sw-record', 'sw-msg', 'auto-time', 'record-status',
     'meas-body', 'meas-empty', 'meas-sd-note', 'csv', 'clear-data', 'props-body', 'props-empty', 'trial-e', 'trial-e-out', 'find-e', 'reveal', 'average-on', 'average-state',
     'c-df', 'c-tf', 'c-v', 'c-dr', 'c-tr', 'c-motion', 'c-msg', 'c-s1', 'c-s2', 'c-s3', 'c-s4', 'c-s5', 'c-s6',
@@ -56,7 +56,54 @@
 
   els.speed.addEventListener('change', function () { state.speed = parseFloat(els.speed.value) || 1; });
 
-  function showVolts() { els['volts-out'].textContent = fmt(sim.V, 0) + NB + 'V'; }
+  /** The voltage box shows the supply's setting, unless the user is in the middle of typing a new one. */
+  function showVolts() {
+    var box = els['volts-num'];
+    if (document.activeElement !== box || !box._editing) box.value = String(Math.round(sim.V));
+    showResultsNow();
+  }
+
+  /** Read a typed plate voltage: 600, 600 V, 1.2 kV, 0.6k. NaN if it cannot be read. */
+  function parseVolts(text) {
+    var t = String(text).trim().replace(/[−–]/g, '-').replace(/\s+/g, '').replace(/,/g, '').replace(/^\+/, '');
+    var m = /^(-?\d*\.?\d+(?:e[-+]?\d+)?)(kv|k|v)?$/i.exec(t);
+    if (!m) return NaN;
+    var v = parseFloat(m[1]);
+    if (m[2] && /^k/i.test(m[2])) v *= 1000;
+    return v;
+  }
+
+  /** Apply the typed voltage: clamped to the supply's range, with the reason in words; an unreadable entry is flagged. */
+  function applyVoltsNum() {
+    var box = els['volts-num'], msgEl = els['volts-num-msg'];
+    box._editing = false;
+    var v = parseVolts(box.value), msg = '';
+    if (!isFinite(v)) {
+      box.setAttribute('aria-invalid', 'true');
+      msgEl.textContent = 'Type a number of volts from 0 to ' + V_MAX + ', such as 600.';
+      return;
+    }
+    v = Math.round(v);
+    if (v > V_MAX) { v = V_MAX; msg = 'Set to ' + V_MAX + NB + 'V, the most the supply gives.'; }
+    if (v < 0) { v = 0; msg = 'Set to 0' + NB + 'V: the supply cannot reverse the plates.'; }
+    box.removeAttribute('aria-invalid');
+    msgEl.textContent = msg;
+    setVolts(v);
+    box.value = String(v);
+  }
+
+  /** The line at the top of the results page: how the apparatus stands and what has been measured. */
+  function showResultsNow() {
+    var el = els['results-now'];
+    if (!el) return;
+    var rows = state.rows.length, nF = 0, drops = {};
+    state.rows.forEach(function (r) { drops[r.dropId] = true; if (r.kind === 'field') nF++; });
+    var nD = Object.keys(drops).length;
+    var parts = ['Plate voltage ' + fmt(sim.V, 0) + NB + 'V, ' + (sim.s > 0 ? 'field on' : 'plates shorted') + ', source ' + (sim.source ? 'on' : 'off')];
+    parts.push(state.trackedId ? 'tracking ' + dropName(state.trackedId).toLowerCase() : 'no drop tracked');
+    parts.push(rows ? rows + ' measurement' + (rows === 1 ? '' : 's') + ' on ' + nD + ' drop' + (nD === 1 ? '' : 's') + ', ' + nF + ' with the field on' : 'no measurements yet');
+    setStatus(el, 'Apparatus: ' + parts.join('; ') + '.');
+  }
 
   /** Set the plate voltage from the slider or from the arrows on the drawn supply. */
   function setVolts(v) {
@@ -67,7 +114,24 @@
     drawViews();
     showNow(true);
   }
-  els.volts.addEventListener('input', function () { setVolts(parseFloat(els.volts.value)); });
+  els.volts.addEventListener('input', function () {
+    els['volts-num'].removeAttribute('aria-invalid');
+    els['volts-num-msg'].textContent = '';
+    setVolts(parseFloat(els.volts.value));
+  });
+  els['volts-num'].addEventListener('input', function () { els['volts-num']._editing = true; });
+  els['volts-num'].addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); applyVoltsNum(); }
+    else if (e.key === 'Escape' && els['volts-num']._editing) {
+      // Abandon the edit; this Escape does not also leave presentation mode.
+      e.stopPropagation();
+      els['volts-num']._editing = false;
+      els['volts-num'].removeAttribute('aria-invalid');
+      els['volts-num-msg'].textContent = '';
+      showVolts();
+    }
+  });
+  els['volts-num'].addEventListener('blur', function () { if (els['volts-num']._editing) applyVoltsNum(); });
 
   function showSwitch(input, stateEl, on) {
     if (input.checked !== on) input.checked = on;
@@ -82,6 +146,7 @@
     sim.s = s;
     drawViews();
     showNow(true);
+    showResultsNow();
   }
   els['field-on'].addEventListener('change', function () { setField(els['field-on'].checked); });
 
@@ -93,6 +158,7 @@
     sim.source = on;
     drawViews();
     showNow(true);
+    showResultsNow();
   }
   els['source-on'].addEventListener('change', function () { setSource(els['source-on'].checked); });
 
@@ -210,6 +276,7 @@
     setStatus(els['view-status'], message || (id ? 'Tracking ' + dropName(id).toLowerCase() + '.' : 'Not tracking a drop.'));
     drawViews();
     showNow(true);
+    showResultsNow();
   }
 
   function trackStep(delta) {
@@ -1235,6 +1302,7 @@
       td.hidden = !state.reveal;
       body.appendChild(tr);
     });
+    showResultsNow();
   }
 
   function setTrial(v) {

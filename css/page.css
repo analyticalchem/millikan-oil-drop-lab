@@ -38,18 +38,83 @@ input.switch:checked::before { transform: translateX(1.3em); background: var(--a
 }
 .confirm-msg { margin: 0; font-weight: 600; }
 
+/* ---------- Pages and the page switch (style guide 7.19) ---------- */
+
+/* Each page is a grid child of main, so it needs min-width: 0 or a wide table would widen it past the window. */
+.page { min-width: 0; }
+.page-instrument { display: grid; gap: 16px; }
+/* The page switch in the header: links, the current page underlined in the accent with darker text. */
+.page-nav { display: flex; flex-wrap: wrap; gap: 4px; align-self: center; }
+.page-nav a {
+  padding: 6px 12px 5px; border-bottom: 3px solid transparent; border-radius: 6px 6px 0 0;
+  font-weight: 600; color: var(--text-secondary); text-decoration: none;
+}
+.page-nav a:hover { background: var(--surface-2); color: var(--text-primary); }
+.page-nav a[aria-current="page"] { color: var(--text-primary); border-bottom-color: var(--accent); }
+a.btn { display: inline-block; text-decoration: none; white-space: nowrap; }
+
+/* ---------- The toolbar, the Settings drop-down and the voltage bar (7.18) ---------- */
+
+/* Two rows that wrap on a narrow window: row 1 sets up the experiment (the two switches), row 2 runs it
+   (the buttons, the status line, Settings and the way to the results). */
+.toolbar { display: grid; gap: 8px; }
+.tb-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+.tb-item { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.tb-label { font-weight: 600; font-size: 0.9rem; }
+.tb-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.run-status { margin: 0; font-size: 0.9rem; font-weight: 600; color: var(--text-secondary); }
+.tb-run .run-status { flex: 1 1 16rem; margin: 0; font-size: 0.875rem; }
+.tb-run .go-results { margin-left: auto; }
+/* Reset's confirmation takes a row of its own under the buttons. */
+.tb-run .confirm { flex: 1 1 100%; order: 10; margin: 0; }
+/* A typing box's message opens under the box, over what is below, so the bar keeps its size. */
+.tb-msg {
+  position: absolute; left: 0; top: calc(100% + 4px); z-index: 30; width: max-content; max-width: 22rem;
+  margin: 0; padding: 4px 8px; background: var(--surface); border: 1px solid var(--critical-text); border-radius: 6px;
+}
+.tb-msg:empty { display: none; }
+
+/* Settings: a native disclosure styled as a button with a chevron, filled while open. */
+.settings { position: relative; z-index: 20; }
+.settings > summary { display: inline-flex; align-items: center; gap: 8px; list-style: none; }
+.settings > summary::-webkit-details-marker { display: none; }
+.settings > summary::after {
+  content: ""; width: 7px; height: 7px; border: solid currentColor; border-width: 0 2px 2px 0;
+  transform: translateY(-2px) rotate(45deg);
+}
+.settings[open] > summary { background: var(--text-primary); color: var(--surface); border-color: transparent; }
+.settings[open] > summary::after { transform: translateY(2px) rotate(-135deg); }
+.settings:not([open]) > .settings-panel { display: none; }
+.settings-panel {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); gap: 16px 32px;
+  margin-top: 10px; padding: 14px 18px 16px; background: var(--surface);
+  border: 2px solid var(--text-muted); border-radius: var(--radius);
+}
+/* Stacked, the open panel takes a row of its own, the full width of the toolbar, and pushes what follows down. */
+html:not(.one-screen) .settings[open] { flex: 1 1 100%; }
+.settings-group { display: grid; gap: 12px; align-content: start; justify-items: start; }
+.settings-group .control { width: 100%; }
+.settings-group .info-title { margin: 0; }
+.settings-group .control-sub { margin: 0; max-width: 32rem; }
+
+/* The plate voltage's slider runs the width of the view, under it, with its typing box. */
+.volt-bar { position: relative; display: grid; grid-template-columns: auto minmax(10rem, 1fr) auto; gap: 4px 16px; align-items: center; margin-top: 8px; }
+.volt-bar .control-head { justify-content: flex-start; gap: 10px; }
+.volt-bar label { font-weight: 600; }
+.volt-bar input[type="range"] { margin: 0; }
+.volt-bar .control-sub { margin: 0; }
+.volt-bar .num { width: 5em; }
+.volt-bar .tb-msg { top: auto; bottom: calc(100% + 4px); }
+
 /* ---------- Apparatus view ---------- */
 
-.view-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; }
-.track-btns { display: flex; flex-wrap: wrap; gap: 8px; }
-.view-status { margin: 8px 0 0; font-size: 0.9rem; font-weight: 600; }
-.view-status:empty { margin: 0; }
+.drawing-fit { margin-top: 10px; }
 
 /* The bench: the stage, and beside it (in the eyepiece view) the focus and the stopwatch. On a wide
    screen the bench's column opens and closes over the same 0.9 s as the eyepiece, so the drawing
    shrinks smoothly into a smaller eyepiece and widens smoothly on the way back; on a narrow screen
    the bench sits below the stage and simply appears. */
-.bench { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px 24px; margin-top: 12px; align-items: start; }
+.bench { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px 24px; align-items: start; }
 .side-col { min-width: 0; }
 .side-panel { min-width: 0; padding: 14px 16px 6px; border: 1px solid var(--grid); border-radius: 10px; }
 .side-title { margin: 0 0 8px; font-size: 1rem; font-weight: 650; }
@@ -158,8 +223,9 @@ three-d-stage:not(:defined) { visibility: hidden; }
 
 .stage-caption { margin: 10px 0 0; font-size: 0.9rem; font-variant-numeric: tabular-nums; color: var(--text-primary); }
 .stage-caption:empty { margin: 0; }
-.view-help { margin: 12px 0 0; font-size: 0.85rem; color: var(--text-secondary); }
 .scale-note { margin: 6px 0 0; font-size: 0.85rem; color: var(--text-secondary); }
+/* A second block inside a results tab (Drop Properties under the Measurements). */
+.panel-title { margin: 22px 0 0; font-size: 1.05rem; font-weight: 650; }
 
 /* Key and Now blocks (style guide 7.10.1) */
 .info-block { margin-top: 14px; }
@@ -257,18 +323,40 @@ three-d-stage:not(:defined) { visibility: hidden; }
 .record-status { margin: 10px 0 0; font-size: 0.9rem; font-weight: 600; }
 .record-status:empty { margin: 0; }
 
-.grid-data { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 16px; }
+/* ---------- The results page: tabs (7.20) ---------- */
+
+.results-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-bottom: 6px; }
+.results-now { flex: 1 1 20rem; margin: 0; font-size: 0.9rem; color: var(--text-secondary); }
+/* The chosen tab is underlined in the accent and its text is darker, so it differs by more than colour;
+   every tab keeps its place and size. */
+.tabs { display: flex; flex-wrap: wrap; gap: 2px 0; margin: 0 -6px 12px; border-bottom: 1px solid var(--grid); }
+.tab {
+  margin-bottom: -1px; padding: 8px 12px 7px;
+  font: inherit; font-size: 0.95rem; font-weight: 600; color: var(--text-secondary);
+  background: transparent; border: 0; border-bottom: 3px solid transparent; border-radius: 6px 6px 0 0;
+  cursor: pointer;
+}
+.tab:hover { background: var(--surface-2); color: var(--text-primary); }
+.tab[aria-selected="true"] { color: var(--text-primary); border-bottom-color: var(--accent); }
+/* The card keeps one height whatever tab is open, so changing tabs never changes the length of the page.
+   On one screen the page sets the card's height; stacked, the card and the footer fit in the window
+   together. The open tab fills the card below the tab row, its chart taking the spare height, and scrolls
+   inside itself when its content is taller; the padding keeps edge focus rings inside the scroll box. */
+.results-card { display: flex; flex-direction: column; }
+html:not(.one-screen) .results-card { height: calc(100vh - 6rem); height: calc(100dvh - 6rem); min-height: 26rem; max-height: 60rem; }
+.results-card .tab-panel { flex: 1 1 0; min-height: 0; overflow: auto; display: flex; flex-direction: column; padding: 4px; margin: -4px; border: 0; border-radius: 0; gap: 0; }
+.results-card .tab-panel > .card-sub:first-of-type { margin-top: 0; }
+/* Only the chart gives up height; everything else keeps its own, so a panel scrolls as one piece. */
+.results-card .tab-panel > * { flex-shrink: 0; }
+.results-card .notes-body { max-width: none; }
+.results-card .notes-body > * { max-width: 85ch; }
+.about-lede { color: var(--text-primary); }
 .results .card-sub { margin-top: 0; }
 #meas-table td.text, #props-table td.text { white-space: nowrap; }
 .row-remove { padding: 2px 8px; font-size: 0.8rem; font-weight: 500; }
 
 /* Charge calculation: typed inputs, then the steps with the numbers substituted. */
-/* The Charge Calculation panel folds to its title: a native disclosure with the heading inside the summary. */
-.calc-card summary { cursor: pointer; }
-.calc-card summary h2 { display: inline; }
-.calc-card details > .card-sub { margin-top: 8px; }
-.calc-card .calc-inputs { margin-top: 14px; }
-.calc-inputs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 28px; }
+.calc-inputs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 28px; margin-top: 14px; }
 .calc-inputs label { display: block; margin-bottom: 6px; font-weight: 600; }
 .calc-inputs .entry { display: flex; width: 100%; max-width: 16em; }
 .calc-inputs .num { flex: 1 1 auto; min-width: 0; width: auto; padding: 6px 10px; text-align: left; }
@@ -340,15 +428,21 @@ three-d-stage:not(:defined) { visibility: hidden; }
 .ana-tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 16px; }
 .chart-card .verdict { margin-top: 12px; }
 .chart-card .verdict:empty { margin: 0; }
-.chart-wrap { position: relative; margin-top: 12px; }
-.qchart { --h: clamp(200px, 24vw, max(280px, 40vh)); }
+/* The charge chart takes the Analysis tab's spare height. Its size comes from its box, never from its
+   canvas, whose pixel size would otherwise push it taller, nor from presentation mode's fixed heights. */
+.chart-visual { --h: clamp(220px, 24vw, max(300px, 40vh)); position: relative; margin-top: 12px; }
+.chart-visual canvas { display: block; width: 100%; height: 100%; }
+.results-card .chart-visual, html[data-present] .results-card .chart-visual { flex: 1 1 0; flex-shrink: 1; height: auto; min-height: 14rem; contain: size; }
 .table-view { margin-top: 12px; }
 .table-view summary { cursor: pointer; font-weight: 600; color: var(--text-secondary); }
 
 /* ---------- Responsive ---------- */
 
+@media (max-width: 760px) {
+  .volt-bar { grid-template-columns: minmax(0, 1fr); }
+}
+
 @media (max-width: 980px) {
-  .grid-data { grid-template-columns: minmax(0, 1fr); }
   .ana-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ana-controls { grid-template-columns: minmax(0, 1fr); }
   .calc-inputs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -364,16 +458,68 @@ three-d-stage:not(:defined) { visibility: hidden; }
   .stage.eye-size { min-height: 0; }
 }
 
+/* ---------- One screen (style guide 4.1) ---------- */
+
+/* When the window is large enough (layout.js adds .one-screen), the apparatus page fills the window with
+   no page scroll: the header shrinks, the card is a grid of toolbar, view, Key and voltage bar, and the
+   view takes every pixel the other three leave. The results page fills the window the same way. */
+html.one-screen body { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
+html.one-screen .site-header { flex: none; padding-top: 10px; padding-bottom: 10px; }
+html.one-screen .title-row { align-items: center; }
+/* The topic line and the one-sentence summary give way to the view; the summary is also under About. */
+html.one-screen .eyebrow, html.one-screen .lede { display: none; }
+html.one-screen h1, html.one-screen[data-present] h1 { font-size: 1.6rem; }
+html.one-screen .title-rule { width: 200px; margin-top: 6px; }
+html.one-screen .present-hint { margin-top: 4px; }
+html.one-screen main { flex: 1 1 0; min-height: 0; display: block; }
+html.one-screen .site-footer { flex: none; padding-top: 6px; padding-bottom: 8px; }
+html.one-screen .site-footer p { margin: 0; }
+html.one-screen .card { padding: 12px 16px; min-height: 0; }
+html.one-screen .page { height: 100%; }
+html.one-screen .page-instrument { grid-template-rows: minmax(0, 1fr); }
+html.one-screen .page-results { display: flex; flex-direction: column; }
+html.one-screen .page-results > .results-card { flex: 1 1 0; min-height: 0; }
+html.one-screen .instrument-card { display: grid; grid-template-rows: auto minmax(0, 1fr) auto auto; overflow: auto; }
+/* The status keeps room for two lines, so the view does not change size as the message changes. */
+html.one-screen .tb-run .run-status { min-height: 2.6em; }
+/* The Settings panel opens over the view, under its button, and closes again. */
+html.one-screen .settings-panel {
+  position: absolute; left: 0; top: 100%; width: min(42rem, calc(100vw - 64px));
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+/* The view's box takes the grid's spare row; the bench, the stage and the 3D view fill it, with the
+   caption on one line under them, and the focus and stopwatch panel scrolls if it is taller. */
+html.one-screen .drawing-fit { contain: size; min-height: 12rem; margin-top: 8px; display: grid; grid-template-rows: minmax(0, 1fr) auto; }
+html.one-screen .bench { height: 100%; min-height: 0; align-items: stretch; }
+html.one-screen .stage { height: 100%; min-height: 0; }
+html.one-screen .stage.eye-size, html.one-screen[data-present] .stage.eye-size { min-height: 0; }
+html.one-screen .view-cutaway { height: 100%; }
+html.one-screen .app3d { height: 100%; }
+html.one-screen .side-col { max-height: 100%; }
+html.one-screen .bench.with-side .side-col { overflow: auto; }
+html.one-screen .stage-caption { margin-top: 6px; }
+html.one-screen .drawing-key { margin-top: 6px; }
+html.one-screen .drawing-key .legend { margin-top: 4px; gap: 4px 18px; }
+/* The Key beside the view (layout.js chooses it when the card is much wider than it is tall). */
+html.one-screen .instrument-card.key-beside { grid-template-columns: minmax(0, 1fr) 15rem; grid-template-rows: auto minmax(0, 1fr) auto; column-gap: 16px; }
+html.one-screen .instrument-card.key-beside > .toolbar, html.one-screen .instrument-card.key-beside > .volt-bar { grid-column: 1 / -1; }
+html.one-screen .instrument-card.key-beside > .drawing-fit { grid-column: 1; grid-row: 2; }
+html.one-screen .instrument-card.key-beside > .drawing-key { grid-column: 2; grid-row: 2; align-self: start; display: block; margin-top: 16px; }
+html.one-screen .instrument-card.key-beside .drawing-key .legend { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+html.one-screen .instrument-card.key-beside > .volt-bar { grid-row: 3; }
+
 /* ---------- Presentation mode ---------- */
 
 @media (min-width: 900px) {
-  html[data-present] .view-help, html[data-present] .scale-note, html[data-present] .view-status,
+  html[data-present] .scale-note, html[data-present] .run-status,
   html[data-present] .record-status, html[data-present] .stage-caption { font-size: 1.05rem; }
+  html[data-present] .tb-run .run-status { font-size: 1rem; }
+  html[data-present] .tab, html[data-present] .page-nav a { padding: 10px 14px 9px; font-size: 1.05rem; }
+  html[data-present] .results-now, html[data-present] .tb-label { font-size: 1.05rem; }
   html[data-present] .info-title { font-size: 0.9rem; }
   html[data-present] .side-title { font-size: 1.15rem; }
   html[data-present] .eq math { font-size: 1.3rem; }
   html[data-present] .calc-pending, html[data-present] .calc-why, html[data-present] .terms { font-size: 1.05rem; }
-  html[data-present] .calc-card summary { font-size: 1.5rem; }
   html[data-present] .fx-line { font-size: 1.2rem; }
   html[data-present] .fx-in { font-size: 1rem; }
   html[data-present] .sw-display { font-size: 2.4rem; }

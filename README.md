@@ -4,6 +4,8 @@ An interactive teaching page that simulates the Millikan oil drop experiment.
 
 Spray a mist of oil into the chamber, pick a drop, and time it falling under gravity with the plates shorted and rising (or falling more slowly) in the electric field between the plates. The fall gives the drop's radius and mass; each timed run with the field on gives its charge. Expose the ionization source to change a drop's charge and time it again. The charges come in whole-number multiples of one unit, the charge of the electron, and the page's analysis finds that unit from your own measurements.
 
+The page has two parts in one document, after the house style's instrument-page pattern: the Apparatus page, where the 3D view fills the window with its controls in a toolbar above it (the plate voltage and ionization source switches, Spray, Pause, the eyepiece and tracking buttons, Reset, a Settings drop-down for the speed) and the plate voltage slider under it; and the Results page, reached by See the results or the Results link, with tabs for the Measurements, the Charge Calculation, the Charge Analysis and the notes. On a window of at least 1100 × 680 px (1280 × 720 presenting) the apparatus page fills the screen with no scrolling; below that it stacks. Back and Forward move between the pages.
+
 The apparatus can be viewed as a 3D cutaway (a model of Millikan's apparatus with a quarter of the chamber cut away, showing the plates, the glass spacer, the pinhole, the window ports, viewing scope, arc lamp, atomizer, α source and plate voltage supply, with a magnified view of the gap where the drops are) or through the eyepiece (a dark field with a reticle and the drops as points of light). One button flies the camera into the eyepiece and back out again; beside the eyepiece sit the scope focus and the stopwatch and recording panel. The model itself can be worked with the pointer: the bulb sprays, the knife switch on the supply and the source lever toggle, Raise and Lower beside the voltmeter change the voltage (hold to repeat), and clicking the eyepiece looks into it; the controls above do the same from the keyboard.
 
 No build step: plain HTML, CSS and JavaScript. The 3D view is drawn with three.js 0.184 (MIT), kept in `js/vendor/three` so the page makes no third-party requests and works offline.
@@ -65,6 +67,7 @@ js/vendor/three/    three.js 0.184: the module, OrbitControls and the exporters,
 js/eyepiece.js      the eyepiece view (canvas)
 js/chart.js         the charge dot plot
 js/main.js          wires the controls, views, bench, tracking, timing, tables and analysis
+js/layout.js        the two pages, the one-screen arrangement, the Settings drop-down and the results tabs
 ```
 
 ## License

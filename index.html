@@ -7,8 +7,8 @@
   <meta name="description" content="Run a Millikan oil drop experiment: spray drops, watch them through the eyepiece or in a cutaway of the apparatus, time their rise and fall between charged plates, work out each drop's radius, mass and charge, and find the charge of the electron from your own measurements.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Crect%20x='4'%20y='6'%20width='24'%20height='4'%20fill='%23c9a227'/%3E%3Crect%20x='4'%20y='22'%20width='24'%20height='4'%20fill='%23c9a227'/%3E%3Ccircle%20cx='16'%20cy='16'%20r='3.5'%20fill='%23c2410c'/%3E%3C/svg%3E">
   <!-- ?v= tags: change all of them to a new value with every release so browsers fetch the new files. -->
-  <link rel="stylesheet" href="css/styles.css?v=20261019-1">
-  <link rel="stylesheet" href="css/page.css?v=20261019-1">
+  <link rel="stylesheet" href="css/styles.css?v=20261019-2">
+  <link rel="stylesheet" href="css/page.css?v=20261019-2">
   <!-- three.js 0.184 for the 3D cutaway, kept with the page in js/vendor/three (MIT licence there). -->
   <script type="importmap">
   {
@@ -40,6 +40,10 @@
         <p class="lede">Spray a mist of oil into the chamber, pick a drop, and time it falling under gravity and rising in the electric field between the plates. The fall gives the drop's radius and mass, each timed rise gives its charge, and the charges come in steps: the charge of one electron.</p>
         <p class="present-hint">Alt + Shift + P toggles · Esc exits</p>
       </div>
+      <nav class="page-nav" aria-label="Pages">
+        <a href="#instrument" id="nav-instrument" aria-current="page">Apparatus</a>
+        <a href="#results" id="nav-results">Results</a>
+      </nav>
       <div class="header-actions">
         <button id="theme" class="btn ghost" type="button" title="Switch between automatic, light and dark colors">Theme: auto</button>
         <button id="present" class="btn ghost" type="button" aria-pressed="false" title="Larger text and controls for projecting. Escape exits.">Present</button>
@@ -48,142 +52,137 @@
   </header>
 
   <main id="main">
-    <section class="card controls" aria-labelledby="controls-title">
-      <div class="card-head">
-        <h2 id="controls-title">Apparatus Controls</h2>
-        <p class="card-sub">Squeeze the atomizer to spray drops, then work the plates and the ionization source. The focus and the stopwatch are beside the eyepiece once you look into it.</p>
-      </div>
-      <div class="run-row first">
-        <button id="spray" class="btn primary" type="button">Spray Oil Drops</button>
-        <button id="pause" class="btn" type="button">Pause</button>
-        <label class="select">Speed
-          <select id="speed">
-            <option value="0.5">0.5×</option>
-            <option value="1" selected>1× (real time)</option>
-            <option value="2">2×</option>
-            <option value="4">4×</option>
-            <option value="8">8×</option>
-          </select>
-        </label>
-        <button id="reset" class="btn" type="button">Reset Experiment</button>
-      </div>
-      <div class="sliders">
-        <div class="control">
-          <div class="control-head">
-            <label for="volts">Plate voltage</label>
-            <output id="volts-out" for="volts"></output>
-          </div>
-          <input id="volts" type="range" min="0" max="1200" step="1" value="600" aria-describedby="volts-sub">
-          <p class="control-sub" id="volts-sub">0 to 1200 V across the 14.92 mm gap; the field is V ÷ d</p>
-        </div>
-        <div class="control">
-          <div class="control-head">
-            <label for="field-on">Plate Voltage</label>
-            <span class="switch-wrap"><span class="switch-state" id="field-state">Off</span><input type="checkbox" id="field-on" class="switch" role="switch" aria-describedby="field-sub"></span>
-          </div>
-          <p class="control-sub" id="field-sub">Off shorts the plates; on puts the voltage across them, top plate positive and bottom negative</p>
-        </div>
-        <div class="control">
-          <div class="control-head">
-            <label for="source-on">Ionization Source</label>
-            <span class="switch-wrap"><span class="switch-state" id="source-state">Off</span><input type="checkbox" id="source-on" class="switch" role="switch" aria-describedby="src-sub"></span>
-          </div>
-          <p class="control-sub" id="src-sub">Exposed, the α source ionizes the air and drops that capture ions change charge</p>
-        </div>
-      </div>
-    </section>
 
-    <section class="card visual-card" aria-labelledby="view-title">
-      <div class="card-head">
-        <h2 id="view-title">Apparatus View</h2>
-      </div>
-      <div class="view-row">
-        <button id="view-toggle" class="btn primary" type="button">Look Into the Eyepiece</button>
-        <div class="track-btns" role="group" aria-label="Track a drop">
-          <button id="track-prev" class="btn" type="button">Previous Drop</button>
-          <button id="track-next" class="btn" type="button">Next Drop</button>
-          <button id="track-stop" class="btn" type="button">Stop Tracking</button>
+    <!-- Page 1, the apparatus: the 3D view fills the window; the toolbar above it holds the controls used
+         all the time and a Settings drop-down the rest, and the plate voltage slider runs under the view. -->
+    <div class="page page-instrument" id="page-instrument">
+    <section class="card visual-card instrument-card" aria-labelledby="view-title">
+      <h2 id="view-title" class="visually-hidden">The Apparatus</h2>
+
+      <div class="toolbar">
+        <div class="tb-row tb-setup">
+          <div class="tb-item">
+            <label class="tb-label" for="field-on">Plate Voltage</label>
+            <span class="switch-wrap"><span class="switch-state" id="field-state">Off</span><input type="checkbox" id="field-on" class="switch" role="switch" aria-describedby="field-sub"></span>
+            <p class="control-sub visually-hidden" id="field-sub">Off shorts the plates; on puts the voltage across them, top plate positive and bottom negative</p>
+          </div>
+          <div class="tb-item">
+            <label class="tb-label" for="source-on">Ionization Source</label>
+            <span class="switch-wrap"><span class="switch-state" id="source-state">Off</span><input type="checkbox" id="source-on" class="switch" role="switch" aria-describedby="src-sub"></span>
+            <p class="control-sub visually-hidden" id="src-sub">Exposed, the α source ionizes the air and drops that capture ions change charge</p>
+          </div>
+        </div>
+
+        <div class="tb-row tb-run">
+          <div class="tb-buttons">
+            <button id="spray" class="btn primary" type="button">Spray Oil Drops</button>
+            <button id="pause" class="btn" type="button">Pause</button>
+            <button id="view-toggle" class="btn" type="button">Look Into the Eyepiece</button>
+            <button id="track-prev" class="btn" type="button">Previous Drop</button>
+            <button id="track-next" class="btn" type="button">Next Drop</button>
+            <button id="track-stop" class="btn" type="button">Stop Tracking</button>
+            <button id="reset" class="btn" type="button">Reset Experiment</button>
+          </div>
+          <p id="view-status" class="run-status" role="status"></p>
+          <details class="settings" id="settings">
+            <summary class="btn">Settings</summary>
+            <div class="settings-panel">
+              <div class="settings-group">
+                <h3 class="info-title">Simulation</h3>
+                <label class="select">Speed
+                  <select id="speed" autocomplete="off">
+                    <option value="0.5">0.5×</option>
+                    <option value="1" selected>1× (real time)</option>
+                    <option value="2">2×</option>
+                    <option value="4">4×</option>
+                    <option value="8">8×</option>
+                  </select>
+                </label>
+                <p class="control-sub">The clock, the stopwatch and the automatic timer run on simulated time, so the speed changes nothing but the wait.</p>
+              </div>
+            </div>
+          </details>
+          <a class="btn go-results" href="#results">See the results<span aria-hidden="true"> →</span></a>
         </div>
       </div>
-      <p id="view-status" class="view-status" role="status"></p>
       <p id="view-sr" class="visually-hidden" role="status"></p>
 
-      <div id="bench" class="bench">
-        <div id="stage" class="stage">
-          <div class="view-cutaway" id="cutaway-box">
-            <three-d-stage id="app" class="app3d visual" name="millikan-oil-drop-apparatus" wheel-zoom="modifier" no-export tabindex="0" note="Drag or arrow keys to turn · Ctrl + scroll, pinch or + and − to zoom · Right-drag to pan" role="group" aria-labelledby="app-title" aria-describedby="app-desc"></three-d-stage>
-            <div class="app3d-overlay" aria-hidden="true">
-              <svg class="app3d-leaders" id="app-leaders"></svg>
-              <div class="app3d-inset" id="app-inset"><span class="app3d-inset-title">Between the plates, magnified</span></div>
-              <div id="app-labels"></div>
-              <div class="app3d-tip" id="app-tip" hidden></div>
+      <div class="drawing-fit">
+        <div id="bench" class="bench">
+          <div id="stage" class="stage">
+            <div class="view-cutaway" id="cutaway-box">
+              <three-d-stage id="app" class="app3d visual" name="millikan-oil-drop-apparatus" wheel-zoom="modifier" no-export tabindex="0" note="Drag or arrow keys to turn · Ctrl + scroll, pinch or + and − to zoom · Right-drag to pan" role="group" aria-labelledby="app-title" aria-describedby="app-desc"></three-d-stage>
+              <div class="app3d-overlay" aria-hidden="true">
+                <svg class="app3d-leaders" id="app-leaders"></svg>
+                <div class="app3d-inset" id="app-inset"><span class="app3d-inset-title">Between the plates, magnified</span></div>
+                <div id="app-labels"></div>
+                <div class="app3d-tip" id="app-tip" hidden></div>
+              </div>
+              <div class="app3d-tools" role="group" aria-label="3D view">
+                <button id="app-view-all" class="btn app3d-btn" type="button">Whole Apparatus</button>
+                <button id="app-view-chamber" class="btn app3d-btn" type="button">Chamber</button>
+                <button id="app-cut" class="btn app3d-btn" type="button" aria-pressed="true">Cutaway</button>
+                <button id="app-labels-btn" class="btn app3d-btn" type="button" aria-pressed="true">Labels</button>
+              </div>
+              <p id="app-title" class="visually-hidden">3D cutaway of Millikan's oil drop apparatus</p>
+              <p id="app-desc" class="visually-hidden">A model of Millikan's apparatus with a quarter of the iron chamber cut away. Inside, near the bottom, two brass plates 14.92 mm apart are separated by a glass ring; the top plate has a pinhole at its centre. An atomizer on a pillar at the left sprays oil through a port near the top of the chamber, and the drops drift down to the top plate and through the pinhole into the gap. The viewing scope, on its stand at the front left, looks into the gap through a window port and has its eyepiece turned up at 45 degrees; the arc lamp lights the gap through a port on the right; the alpha source sits in the front port. Leads from the right of the chamber run to the plate voltage supply on the bench, which has a voltmeter, a counter showing the voltage, Raise and Lower buttons, a knob and a knife switch. A magnified view of the gap in the top right corner shows the drops, the field arrows when the plates are charged, and the alpha tracks when the source is exposed. The bulb, the knife switch, Raise and Lower, the source lever and the eyepiece can be clicked to work them. The clock, the number of drops in view and the tracked drop's position are in the caption below the view.</p>
             </div>
-            <div class="app3d-tools" role="group" aria-label="3D view">
-              <button id="app-view-all" class="btn app3d-btn" type="button">Whole Apparatus</button>
-              <button id="app-view-chamber" class="btn app3d-btn" type="button">Chamber</button>
-              <button id="app-cut" class="btn app3d-btn" type="button" aria-pressed="true">Cutaway</button>
-              <button id="app-labels-btn" class="btn app3d-btn" type="button" aria-pressed="true">Labels</button>
+            <div class="view-eyepiece" id="eyepiece-box" hidden>
+              <canvas id="eye" class="eye-canvas" role="img" aria-label="The view through the eyepiece: bright points of light, the oil drops, drifting up or down across a reticle of horizontal lines 0.5 mm apart with finer 0.1 mm ticks. The tracked drop is ringed. The clock, the number of drops in view and the tracked drop's position are in the caption below the view."></canvas>
             </div>
-            <p id="app-title" class="visually-hidden">3D cutaway of Millikan's oil drop apparatus</p>
-            <p id="app-desc" class="visually-hidden">A model of Millikan's apparatus with a quarter of the iron chamber cut away. Inside, near the bottom, two brass plates 14.92 mm apart are separated by a glass ring; the top plate has a pinhole at its centre. An atomizer on a pillar at the left sprays oil through a port near the top of the chamber, and the drops drift down to the top plate and through the pinhole into the gap. The viewing scope, on its stand at the front left, looks into the gap through a window port and has its eyepiece turned up at 45 degrees; the arc lamp lights the gap through a port on the right; the alpha source sits in the front port. Leads from the right of the chamber run to the plate voltage supply on the bench, which has a voltmeter, a counter showing the voltage, Raise and Lower buttons, a knob and a knife switch. A magnified view of the gap in the top right corner shows the drops, the field arrows when the plates are charged, and the alpha tracks when the source is exposed. The bulb, the knife switch, Raise and Lower, the source lever and the eyepiece can be clicked to work them. The clock, the number of drops in view and the tracked drop's position are in the caption below the view.</p>
-          </div>
-          <div class="view-eyepiece" id="eyepiece-box" hidden>
-            <canvas id="eye" class="eye-canvas" role="img" aria-label="The view through the eyepiece: bright points of light, the oil drops, drifting up or down across a reticle of horizontal lines 0.5 mm apart with finer 0.1 mm ticks. The tracked drop is ringed. The clock, the number of drops in view and the tracked drop's position are in the caption below the view."></canvas>
-          </div>
-        </div>
-
-        <div id="side-col" class="side-col">
-        <div id="side" class="side-panel">
-          <h3 class="side-title">Scope Focus</h3>
-          <div class="control">
-            <div class="control-head">
-              <label for="focus">Focal plane</label>
-              <output id="focus-out" for="focus"></output>
-            </div>
-            <input id="focus" type="range" min="-1" max="1" step="0.05" value="0" aria-describedby="focus-sub">
-            <p class="control-sub" id="focus-sub">Up to 1 mm nearer to you or farther away than the centre of the gap; drops in the focal plane are sharp points, the rest are blurred</p>
           </div>
 
-          <h3 class="side-title">Stopwatch and Recording</h3>
-          <p class="sw-display" id="sw-display">0.00 s</p>
-          <div class="sw-row">
-            <button id="sw-start" class="btn" type="button">Start</button>
-            <button id="sw-reset" class="btn" type="button">Reset</button>
+          <div id="side-col" class="side-col">
+          <div id="side" class="side-panel">
+            <h3 class="side-title">Scope Focus</h3>
+            <div class="control">
+              <div class="control-head">
+                <label for="focus">Focal plane</label>
+                <output id="focus-out" for="focus"></output>
+              </div>
+              <input id="focus" type="range" min="-1" max="1" step="0.05" value="0" aria-describedby="focus-sub">
+              <p class="control-sub" id="focus-sub">Up to 1 mm nearer to you or farther away than the centre of the gap; drops in the focal plane are sharp points, the rest are blurred</p>
+            </div>
+
+            <h3 class="side-title">Stopwatch and Recording</h3>
+            <p class="sw-display" id="sw-display">0.00 s</p>
+            <div class="sw-row">
+              <button id="sw-start" class="btn" type="button">Start</button>
+              <button id="sw-reset" class="btn" type="button">Reset</button>
+            </div>
+            <div class="sw-fields">
+              <label class="select">Distance timed
+                <select id="sw-dist">
+                  <option value="1">1 division (0.500 mm)</option>
+                  <option value="2">2 divisions (1.000 mm)</option>
+                  <option value="3">3 divisions (1.500 mm)</option>
+                  <option value="4" selected>4 divisions (2.000 mm)</option>
+                  <option value="5">5 divisions (2.500 mm)</option>
+                </select>
+              </label>
+              <label class="select">Motion
+                <select id="sw-motion">
+                  <option value="-1" selected>Falling</option>
+                  <option value="1">Rising</option>
+                </select>
+              </label>
+            </div>
+            <div class="sw-row">
+              <button id="sw-record" class="btn" type="button">Record This Time</button>
+            </div>
+            <p class="num-msg" id="sw-msg" role="alert"></p>
+            <div class="run-row">
+              <label class="check"><input type="checkbox" id="auto-time" checked> Time reticle crossings automatically</label>
+            </div>
+            <p class="control-sub">With this on, the page notes the moment the tracked drop crosses each long reticle line and records a measurement each time it has moved the Distance timed chosen above. A freshly sprayed drop is left alone until the puff of air that carried it in has died away.</p>
+            <p id="record-status" class="record-status" role="status"></p>
           </div>
-          <div class="sw-fields">
-            <label class="select">Distance timed
-              <select id="sw-dist">
-                <option value="1">1 division (0.500 mm)</option>
-                <option value="2">2 divisions (1.000 mm)</option>
-                <option value="3">3 divisions (1.500 mm)</option>
-                <option value="4" selected>4 divisions (2.000 mm)</option>
-                <option value="5">5 divisions (2.500 mm)</option>
-              </select>
-            </label>
-            <label class="select">Motion
-              <select id="sw-motion">
-                <option value="-1" selected>Falling</option>
-                <option value="1">Rising</option>
-              </select>
-            </label>
           </div>
-          <div class="sw-row">
-            <button id="sw-record" class="btn" type="button">Record This Time</button>
-          </div>
-          <p class="num-msg" id="sw-msg" role="alert"></p>
-          <div class="run-row">
-            <label class="check"><input type="checkbox" id="auto-time" checked> Time reticle crossings automatically</label>
-          </div>
-          <p class="control-sub">With this on, the page notes the moment the tracked drop crosses each long reticle line and records a measurement each time it has moved the Distance timed chosen above. A freshly sprayed drop is left alone until the puff of air that carried it in has died away.</p>
-          <p id="record-status" class="record-status" role="status"></p>
         </div>
-        </div>
+        <p class="stage-caption" id="stage-caption"></p>
       </div>
 
-      <p class="stage-caption" id="stage-caption"></p>
-      <p class="view-help" id="view-help">In the cutaway you can work the apparatus directly: click the atomizer bulb to spray, the knife switch on the supply to turn the field on or off, Raise and Lower beside the voltmeter to change the voltage (hold to keep going), the lever on the α source to expose or shield it, and the eyepiece to look into it. Drag to turn the model, or focus it and use the arrow keys; hold Ctrl and scroll (or pinch) to zoom, or press + and −; Whole Apparatus and Chamber jump between views; Cutaway puts the missing quarter of the chamber back. The magnified view at the top right shows the gap between the plates. The controls above do the same from the keyboard. In either view, click a drop to track it, or use the Previous Drop and Next Drop buttons; the tracked drop is ringed in both views. The scope shows an upright image: drops that fall move down.</p>
-
-      <div class="info-block">
+      <div class="info-block drawing-key">
         <h3 class="info-title">Key<span class="visually-hidden"> to the apparatus model</span></h3>
         <ul class="legend" role="list">
           <li class="lg"><span class="lg-dot" style="--key: var(--drop)" aria-hidden="true"></span><span>Orange dot: oil drop, hundreds of times life size in the magnified view</span></li>
@@ -198,12 +197,37 @@
           <li class="lg"><span class="lg-key" style="--key: var(--eye-reticle)" aria-hidden="true"></span><span>Reticle: lines 0.5 mm apart, ticks 0.1 mm</span></li>
         </ul>
       </div>
-    </section>
 
-    <div class="grid-data">
-      <section class="card results" aria-labelledby="meas-title">
-        <h2 id="meas-title">Measurements</h2>
-        <p class="card-sub">Every field-on row needs a field-off fall for the same drop before its charge can be worked out. To work through the calculation yourself, put a drop's numbers into the Charge Calculation panel below.</p>
+      <div class="volt-bar">
+        <div class="control-head">
+          <label for="volts">Plate voltage</label>
+          <span class="entry"><input class="num" id="volts-num" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" aria-label="Plate voltage, in volts" aria-describedby="volts-num-msg"><span class="unit" aria-hidden="true">V</span></span>
+        </div>
+        <input id="volts" type="range" min="0" max="1200" step="1" value="600" aria-describedby="volts-sub" autocomplete="off">
+        <p class="control-sub" id="volts-sub">0 to 1200 V across the 14.92 mm gap; the field is V ÷ d</p>
+        <p class="num-msg tb-msg" id="volts-num-msg" role="alert"></p>
+      </div>
+    </section>
+    </div>
+
+    <!-- Page 2, the results: the measurements, the worked calculation and the analysis, one tab at a time.
+         Same document, so they always follow the experiment running on the apparatus page. -->
+    <div class="page page-results" id="page-results" hidden>
+    <div class="card chart-card results-card">
+      <div class="results-head">
+        <p class="results-now" id="results-now" role="status"></p>
+        <a class="btn go-instrument" href="#instrument"><span aria-hidden="true">← </span>Back to the apparatus</a>
+      </div>
+      <div class="tabs" role="tablist" aria-label="Results">
+        <button type="button" class="tab" role="tab" id="tab-meas" aria-controls="panel-meas" aria-selected="true">Measurements</button>
+        <button type="button" class="tab" role="tab" id="tab-calc" aria-controls="panel-calc" aria-selected="false" tabindex="-1">Charge Calculation</button>
+        <button type="button" class="tab" role="tab" id="tab-ana" aria-controls="panel-ana" aria-selected="false" tabindex="-1">Charge Analysis</button>
+        <button type="button" class="tab" role="tab" id="tab-about" aria-controls="panel-about" aria-selected="false" tabindex="-1">About</button>
+      </div>
+
+      <div class="tab-panel" role="tabpanel" id="panel-meas" aria-labelledby="tab-meas" tabindex="0">
+        <h2 id="meas-title" class="visually-hidden">Measurements</h2>
+        <p class="card-sub">Every field-on row needs a field-off fall for the same drop before its charge can be worked out. To work through the calculation yourself, put a drop's numbers into the Charge Calculation tab.</p>
         <div class="table-scroll">
           <table id="meas-table">
             <caption class="visually-hidden">Timed rises and falls, with the charge each gives</caption>
@@ -229,10 +253,8 @@
           <button id="csv" class="btn" type="button">Download as CSV</button>
           <button id="clear-data" class="btn" type="button">Clear All Measurements</button>
         </div>
-      </section>
 
-      <section class="card results" aria-labelledby="props-title">
-        <h2 id="props-title">Drop Properties</h2>
+        <h3 class="panel-title" id="props-title">Drop Properties</h3>
         <p class="card-sub">From each drop's timed falls: the fall speed sets its radius through Stokes' law, and the radius and the oil's density give its mass. The ± is the Brownian scatter of the mean fall speed, smaller the more falls are averaged.</p>
         <div class="table-scroll">
           <table id="props-table">
@@ -251,198 +273,200 @@
           </table>
         </div>
         <p id="props-empty" class="hint">No drop has been timed falling yet.</p>
-      </section>
-    </div>
-
-    <section class="card chart-card calc-card" aria-labelledby="calc-title">
-      <details id="calc-details">
-      <summary><h2 id="calc-title">Charge Calculation</h2></summary>
-      <p class="card-sub">Type the numbers from one drop's rows in the Measurements table: a fall with the plates shorted and a run with the field on. Then work through the steps below. Each gives its formula and a worksheet line to put your numbers into, and checks your result against those measurements, down to the drop's charge in coulombs.</p>
-      <div class="calc-inputs">
-        <div class="control">
-          <label for="c-df">Fall distance, field off</label>
-          <span class="entry"><input id="c-df" class="num" type="text" inputmode="decimal" autocomplete="off" spellcheck="false"><span class="unit" aria-hidden="true">mm</span></span>
-        </div>
-        <div class="control">
-          <label for="c-tf">Fall time, field off</label>
-          <span class="entry"><input id="c-tf" class="num" type="text" inputmode="decimal" autocomplete="off" spellcheck="false"><span class="unit" aria-hidden="true">s</span></span>
-        </div>
-        <div class="control">
-          <label for="c-v">Plate voltage</label>
-          <span class="entry"><input id="c-v" class="num" type="text" inputmode="decimal" autocomplete="off" spellcheck="false"><span class="unit" aria-hidden="true">V</span></span>
-        </div>
-        <div class="control">
-          <label for="c-dr">Distance, field on</label>
-          <span class="entry"><input id="c-dr" class="num" type="text" inputmode="decimal" autocomplete="off" spellcheck="false"><span class="unit" aria-hidden="true">mm</span></span>
-        </div>
-        <div class="control">
-          <label for="c-tr">Time, field on</label>
-          <span class="entry"><input id="c-tr" class="num" type="text" inputmode="decimal" autocomplete="off" spellcheck="false"><span class="unit" aria-hidden="true">s</span></span>
-        </div>
-        <div class="control">
-          <label for="c-motion">Motion, field on</label>
-          <select id="c-motion">
-            <option value="1" selected>Rising</option>
-            <option value="-1">Falling</option>
-          </select>
-        </div>
       </div>
-      <p class="num-msg" id="c-msg" role="alert"></p>
-      <ol class="calc-steps">
-        <li><span class="calc-name">Fall speed</span><div class="calc-body" id="c-s1"><p class="calc-pending" hidden></p><div class="calc-work"></div><div class="calc-lines"></div></div></li>
-        <li><span class="calc-name">Radius, from Stokes' law with the slip correction</span><div class="calc-body" id="c-s2"><p class="calc-pending" hidden></p><div class="calc-work"></div><div class="calc-lines"></div></div></li>
-        <li><span class="calc-name">Mass, from the oil's density</span><div class="calc-body" id="c-s3"><p class="calc-pending" hidden></p><div class="calc-work"></div><div class="calc-lines"></div></div></li>
-        <li><span class="calc-name">Velocity with the field on</span><div class="calc-body" id="c-s4"><p class="calc-pending" hidden></p><div class="calc-work"></div><div class="calc-lines"></div></div></li>
-        <li><span class="calc-name">Electric field between the plates</span><div class="calc-body" id="c-s5"><p class="calc-pending" hidden></p><div class="calc-work"></div><div class="calc-lines"></div></div></li>
-        <li><span class="calc-name">Charge, from the force balance</span><div class="calc-body" id="c-s6"><p class="calc-pending" hidden></p><div class="calc-work"></div><div class="calc-lines"></div></div></li>
-      </ol>
-      </details>
-    </section>
 
-    <section class="card chart-card" aria-labelledby="ana-title">
-      <div class="card-head">
-        <h2 id="ana-title">Charge Analysis</h2>
+      <div class="tab-panel" role="tabpanel" id="panel-calc" aria-labelledby="tab-calc" tabindex="0" hidden>
+        <h2 id="calc-title" class="visually-hidden">Charge Calculation</h2>
+        <p class="card-sub">Type the numbers from one drop's rows in the Measurements tab: a fall with the plates shorted and a run with the field on. Then work through the steps below. Each gives its formula and a worksheet line to put your numbers into, and checks your result against those measurements, down to the drop's charge in coulombs.</p>
+        <div class="calc-inputs">
+          <div class="control">
+            <label for="c-df">Fall distance, field off</label>
+            <span class="entry"><input id="c-df" class="num" type="text" inputmode="decimal" autocomplete="off" spellcheck="false"><span class="unit" aria-hidden="true">mm</span></span>
+          </div>
+          <div class="control">
+            <label for="c-tf">Fall time, field off</label>
+            <span class="entry"><input id="c-tf" class="num" type="text" inputmode="decimal" autocomplete="off" spellcheck="false"><span class="unit" aria-hidden="true">s</span></span>
+          </div>
+          <div class="control">
+            <label for="c-v">Plate voltage</label>
+            <span class="entry"><input id="c-v" class="num" type="text" inputmode="decimal" autocomplete="off" spellcheck="false"><span class="unit" aria-hidden="true">V</span></span>
+          </div>
+          <div class="control">
+            <label for="c-dr">Distance, field on</label>
+            <span class="entry"><input id="c-dr" class="num" type="text" inputmode="decimal" autocomplete="off" spellcheck="false"><span class="unit" aria-hidden="true">mm</span></span>
+          </div>
+          <div class="control">
+            <label for="c-tr">Time, field on</label>
+            <span class="entry"><input id="c-tr" class="num" type="text" inputmode="decimal" autocomplete="off" spellcheck="false"><span class="unit" aria-hidden="true">s</span></span>
+          </div>
+          <div class="control">
+            <label for="c-motion">Motion, field on</label>
+            <select id="c-motion">
+              <option value="1" selected>Rising</option>
+              <option value="-1">Falling</option>
+            </select>
+          </div>
+        </div>
+        <p class="num-msg" id="c-msg" role="alert"></p>
+        <ol class="calc-steps">
+          <li><span class="calc-name">Fall speed</span><div class="calc-body" id="c-s1"><p class="calc-pending" hidden></p><div class="calc-work"></div><div class="calc-lines"></div></div></li>
+          <li><span class="calc-name">Radius, from Stokes' law with the slip correction</span><div class="calc-body" id="c-s2"><p class="calc-pending" hidden></p><div class="calc-work"></div><div class="calc-lines"></div></div></li>
+          <li><span class="calc-name">Mass, from the oil's density</span><div class="calc-body" id="c-s3"><p class="calc-pending" hidden></p><div class="calc-work"></div><div class="calc-lines"></div></div></li>
+          <li><span class="calc-name">Velocity with the field on</span><div class="calc-body" id="c-s4"><p class="calc-pending" hidden></p><div class="calc-work"></div><div class="calc-lines"></div></div></li>
+          <li><span class="calc-name">Electric field between the plates</span><div class="calc-body" id="c-s5"><p class="calc-pending" hidden></p><div class="calc-work"></div><div class="calc-lines"></div></div></li>
+          <li><span class="calc-name">Charge, from the force balance</span><div class="calc-body" id="c-s6"><p class="calc-pending" hidden></p><div class="calc-work"></div><div class="calc-lines"></div></div></li>
+        </ol>
+      </div>
+
+      <div class="tab-panel" role="tabpanel" id="panel-ana" aria-labelledby="tab-ana" tabindex="0" hidden>
+        <h2 id="ana-title" class="visually-hidden">Charge Analysis</h2>
         <p class="card-sub">If charge comes in a smallest unit, every drop's charge is a whole number of units. Slide the trial unit until the charges line up with its multiples, or let the page search.</p>
-      </div>
-      <div class="ana-controls">
-        <div class="control">
-          <div class="control-head">
-            <label for="trial-e">Trial unit of charge</label>
-            <output id="trial-e-out" for="trial-e"></output>
+        <div class="ana-controls">
+          <div class="control">
+            <div class="control-head">
+              <label for="trial-e">Trial unit of charge</label>
+              <output id="trial-e-out" for="trial-e"></output>
+            </div>
+            <input id="trial-e" type="range" min="0.80" max="4.00" step="0.01" value="1.00" aria-describedby="trial-e-sub">
+            <p class="control-sub" id="trial-e-sub">0.80 to 4.00 × 10⁻¹⁹ C. The dashed lines on the chart sit at its multiples</p>
           </div>
-          <input id="trial-e" type="range" min="0.80" max="4.00" step="0.01" value="1.00" aria-describedby="trial-e-sub">
-          <p class="control-sub" id="trial-e-sub">0.80 to 4.00 × 10⁻¹⁹ C. The dashed lines on the chart sit at its multiples</p>
-        </div>
-        <div class="run-row first">
-          <button id="find-e" class="btn primary" type="button">Search for Unit of Charge</button>
-          <label class="check"><input type="checkbox" id="reveal"> Show the true charges (instructor check)</label>
-        </div>
-        <div class="control">
-          <div class="control-head">
-            <label for="average-on">Average Repeated Measurements</label>
-            <span class="switch-wrap"><span class="switch-state" id="average-state">Off</span><input type="checkbox" id="average-on" class="switch" role="switch" aria-describedby="average-sub"></span>
+          <div class="run-row first">
+            <button id="find-e" class="btn primary" type="button">Search for Unit of Charge</button>
+            <label class="check"><input type="checkbox" id="reveal"> Show the true charges (instructor check)</label>
           </div>
-          <p class="control-sub" id="average-sub">On, a drop timed more than once with the field on, with no exposure to the source in between, counts as one charge: the mean of those runs, with the scatter of the mean</p>
+          <div class="control">
+            <div class="control-head">
+              <label for="average-on">Average Repeated Measurements</label>
+              <span class="switch-wrap"><span class="switch-state" id="average-state">Off</span><input type="checkbox" id="average-on" class="switch" role="switch" aria-describedby="average-sub"></span>
+            </div>
+            <p class="control-sub" id="average-sub">On, a drop timed more than once with the field on, with no exposure to the source in between, counts as one charge: the mean of those runs, with the scatter of the mean</p>
+          </div>
         </div>
+        <div class="tiles ana-tiles">
+          <div class="tile">
+            <span class="tile-label">Charges measured</span>
+            <span class="tile-value" id="t-count"></span>
+            <span class="tile-sub" id="t-count-sub"></span>
+          </div>
+          <div class="tile">
+            <span class="tile-label">Trial unit fit</span>
+            <span class="tile-value" id="t-fit"></span>
+            <span class="tile-sub" id="t-fit-sub"></span>
+          </div>
+          <div class="tile">
+            <span class="tile-label">Unit found</span>
+            <span class="tile-value" id="t-unit"></span>
+            <span class="tile-sub" id="t-unit-sub"></span>
+          </div>
+          <div class="tile">
+            <span class="tile-label">Against the accepted value</span>
+            <span class="tile-value" id="t-acc"></span>
+            <span class="tile-sub" id="t-acc-sub"></span>
+          </div>
+        </div>
+        <p id="ana-status" class="verdict" role="status"></p>
+        <div class="visual chart-visual">
+          <canvas id="qchart" class="qchart" role="img" aria-label="Dot plot of the measured charges along a line from zero, each with a bar for the scatter expected from Brownian motion, and dashed lines at multiples of the trial unit. The charges, their scatter and their nearest multiples are in the table below."></canvas>
+          <div id="qtip" class="tooltip" hidden></div>
+        </div>
+        <ul class="legend" role="list">
+          <li class="lg"><span class="lg-dot" style="--key: var(--series-c)" aria-hidden="true"></span><span>Filled blue dot: one measured charge (stacked when two coincide)</span></li>
+          <li class="lg"><span class="lg-key" style="--key: var(--series-c)" aria-hidden="true"></span><span>Bar through a dot: one standard deviation each way, the scatter expected from Brownian motion</span></li>
+          <li class="lg"><span class="lg-key dashed" style="--key: var(--series-c)" aria-hidden="true"></span><span>Dashed lines: multiples of the trial unit, numbered</span></li>
+          <li class="lg" id="lg-true" hidden><span class="lg-dot hollow" style="--key: var(--series-b)" aria-hidden="true"></span><span>Hollow orange ring: the true charge of that drop (instructor check)</span></li>
+        </ul>
+        <details class="table-view">
+          <summary>Show the Charges as a Table</summary>
+          <div class="table-scroll">
+            <table id="q-table">
+              <caption class="visually-hidden">Measured charges, their expected Brownian scatter and their nearest multiple of the trial unit</caption>
+              <thead>
+                <tr>
+                  <th scope="col" class="text">Drop</th>
+                  <th scope="col">|q| (10<sup>−19</sup> C)</th>
+                  <th scope="col">± scatter (10<sup>−19</sup> C)</th>
+                  <th scope="col" class="text">Sign</th>
+                  <th scope="col">Multiple n</th>
+                  <th scope="col">|q| ÷ n (10<sup>−19</sup> C)</th>
+                  <th scope="col">Off by (units)</th>
+                  <th scope="col" class="true-col" hidden>True n</th>
+                </tr>
+              </thead>
+              <tbody id="q-body"></tbody>
+            </table>
+          </div>
+        </details>
       </div>
-      <div class="tiles ana-tiles">
-        <div class="tile">
-          <span class="tile-label">Charges measured</span>
-          <span class="tile-value" id="t-count"></span>
-          <span class="tile-sub" id="t-count-sub"></span>
-        </div>
-        <div class="tile">
-          <span class="tile-label">Trial unit fit</span>
-          <span class="tile-value" id="t-fit"></span>
-          <span class="tile-sub" id="t-fit-sub"></span>
-        </div>
-        <div class="tile">
-          <span class="tile-label">Unit found</span>
-          <span class="tile-value" id="t-unit"></span>
-          <span class="tile-sub" id="t-unit-sub"></span>
-        </div>
-        <div class="tile">
-          <span class="tile-label">Against the accepted value</span>
-          <span class="tile-value" id="t-acc"></span>
-          <span class="tile-sub" id="t-acc-sub"></span>
-        </div>
+
+      <div class="tab-panel notes-body" role="tabpanel" id="panel-about" aria-labelledby="tab-about" tabindex="0" hidden>
+        <h2 id="notes-title" class="visually-hidden">About the Model</h2>
+        <p class="about-lede">Spray a mist of oil into the chamber, pick a drop, and time it falling under gravity and rising in the electric field between the plates. The fall gives the drop's radius and mass, each timed rise gives its charge, and the charges come in steps: the charge of one electron.</p>
+
+        <h3>Using the page</h3>
+        <p>The Apparatus page is the experiment. The toolbar above the view switches the plate voltage and the ionization source, sprays drops, pauses, looks into the eyepiece and tracks drops; Settings holds the speed of the simulation; the Plate voltage slider and its box run under the view. See the results opens this page, which follows the experiment as it runs; Back to the apparatus, or the browser's Back button, returns to it.</p>
+        <p>In the cutaway you can work the apparatus directly: click the atomizer bulb to spray, the knife switch on the supply to turn the field on or off, Raise and Lower beside the voltmeter to change the voltage (hold to keep going), the lever on the α source to expose or shield it, and the eyepiece to look into it. Drag to turn the model, or focus it and use the arrow keys; hold Ctrl and scroll (or pinch) to zoom, or press + and −; Whole Apparatus and Chamber jump between views; Cutaway puts the missing quarter of the chamber back. The magnified view at the top right shows the gap between the plates. In either view, click a drop to track it, or use the Previous Drop and Next Drop buttons; the tracked drop is ringed in both views. The scope shows an upright image: drops that fall move down.</p>
+
+        <h3>The experiment</h3>
+        <p>Robert Millikan (1909 to 1913) sprayed oil into the gap between two horizontal metal plates, watched single drops through a scope, and timed them. With the plates shorted a drop falls at a steady speed set by its weight and by the air's drag; with a voltage across the plates a charged drop is pushed up (or down) as well, and moves at a different steady speed. From the two speeds the drop's radius, mass and charge follow. Charging the drops again with ionizing radiation, Millikan found the charge always changed by a whole number of one unit.</p>
+
+        <h3>Working the apparatus</h3>
+        <ol>
+          <li><strong>Spray Oil Drops</strong>, or click the atomizer bulb in the cutaway. The bulb blows a mist from the nozzle into the space above the top plate, and the puff of air carries the drops through the hole in the plate into the gap; the rest land on the plate. Look into the eyepiece and pick one that falls slowly (a small drop) and is sharp at the current focus.</li>
+          <li><strong>Track it</strong> by clicking it, or with the Previous Drop and Next Drop buttons. Keep the source off while timing.</li>
+          <li><strong>Time its fall</strong> with the plates shorted, across a known number of long reticle lines (0.5 mm apart). The Drop Properties table then shows its radius and mass.</li>
+          <li><strong>Switch the plate voltage on.</strong> The top plate is positive and the bottom plate negative, so a negatively charged drop (most of them) rises; time its rise. A positively charged drop falls faster instead, and its charge follows just the same. Time a fall and a rise more than once if you can.</li>
+          <li><strong>Change its charge.</strong> Expose the ionization source for a few seconds, then time the rise again. A violet ring spreads from a drop at the moment it captures an ion; with the field on you then see it rise or fall at a new speed, and with the field off nothing else changes until the field goes on, because a drop's fall does not depend on its charge. Repeat for several charges on the same drop, and for several drops.</li>
+          <li><strong>Search for Unit of Charge.</strong> All the charges should be whole-number multiples of one value.</li>
+        </ol>
+        <p>Reset Experiment clears the drops, the clock and every measurement and puts the controls back to their starting values, leaving the view as it is; it asks first when there are measurements to lose.</p>
+
+        <h3>The calculation</h3>
+        <p>A drop of radius <em>r</em> and effective density ρ (oil less air) falling at speed <em>v</em><sub>f</sub> has its weight balanced by Stokes drag, corrected for the fact that such small drops slip between the air molecules:</p>
+        <p class="eqn">(4⁄3) π <em>r</em>³ ρ <em>g</em> = 6 π η <em>r</em> <em>v</em><sub>f</sub> ÷ (1 + <em>b</em> ⁄ (<em>p r</em>))</p>
+        <p>which gives the radius from the fall speed, and the mass as <em>m</em> = (4⁄3) π <em>r</em>³ ρ. With the field <em>E</em> = <em>V</em> ⁄ <em>d</em> on and the drop moving at velocity <em>v</em> (up positive), the electric force makes up the difference, so that the charge is</p>
+        <p class="eqn">|<em>q</em>| = <em>m g</em> (1 + <em>v</em> ⁄ <em>v</em><sub>f</sub>) <em>d</em> ⁄ <em>V</em></p>
+        <p>For a drop that rises at speed <em>v</em><sub>r</sub> this is the familiar form (<em>v</em><sub>f</sub> + <em>v</em><sub>r</sub>) ⁄ <em>v</em><sub>f</sub>; a drop that still falls with the field on, only more slowly, gives a charge the same way with <em>v</em> negative. Because the field always points down, a drop that falls faster with the field on than off is positively charged, and the table says so.</p>
+        <p>Constants used: <em>g</em> = 9.80 m/s², ρ = 886 − 1.2 kg/m³, <em>d</em> = 14.92 mm (the gap in Millikan's 1913 condenser), <em>b</em> = 8.20 × 10⁻³ Pa·m, <em>p</em> = 1.013 × 10⁵ Pa, and the viscosity of air at the chamber's 22.0 °C, η = 1.82 × 10⁻⁵ Pa·s. The Charge Calculation tab works through these steps with numbers you type in from the Measurements table, so the same arithmetic the page does for every row can be followed by hand.</p>
+
+        <h3>Finding the unit</h3>
+        <p>The page works out |<em>q</em>| for every timed run with the field on, using the mean fall speed of the same drop. Search for Unit of Charge scans trial values from 4 × 10⁻¹⁹ C downward and takes the largest one whose multiples fit the charges about as well as any unit does (a local minimum of the root-mean-square deviation, within 2.5 times the best), then refines it by least squares and slides the trial unit to it. With only one or two charges almost anything fits: the search needs several drops, or one drop at several charges, and small charges (a few units) are far more useful than large ones, whose errors swamp the steps. With the instructor check on, the search uses the true charges of the measured drops instead of the measured values, which shows what the method gives with perfect timings. The accepted value is <em>e</em> = 1.602 × 10⁻¹⁹ C.</p>
+
+        <h3>What the simulation does</h3>
+        <ul>
+          <li>Each drop has a radius between about 0.35 and 1.3 µm, a charge of a few elementary units (three quarters of them negative), and moves at its terminal velocity, recomputed every frame. A fresh drop rides the puff of air from the bulb: swept toward the 0.8 mm hole in the top plate, through it, and a few millimetres down into the gap before the stream dies away.</li>
+          <li>Drops jitter with Brownian motion of the right size for their radius and the air temperature, which is why repeated timings of the same drop differ slightly, and why very small drops are hard to time.</li>
+          <li>With the source on, each drop captures an air ion about every two seconds, changing its charge by one unit (sometimes two) of either sign. With the source off, a drop's charge never changes.</li>
+          <li>A slow convection current drifts the drops sideways; drops that reach a plate or drift out of the chamber are lost.</li>
+          <li>The scope has a shallow depth of field: only drops near the focal plane are sharp. It shows an upright image; some real scopes invert it.</li>
+          <li>The cutaway is a 3D model of Millikan's apparatus, after the original at Caltech, with a quarter of the chamber cut away. The chamber, scope, lamp and atomizer are at about their true size, and the plates are 14.92 mm apart, as in Millikan's 1913 condenser. At that scale a drop is far too small to see, so the magnified view of the gap draws the drops hundreds of times larger than life. The eyepiece shows the drops at their true relative positions, each as the point of light a real drop scatters.</li>
+          <li>The clock, the stopwatch and the automatic timer all run on simulated time, so the Speed setting changes nothing but your waiting.</li>
+          <li>The automatic timer works while you look through the eyepiece. It notes the moment the tracked drop crosses each long reticle line and records a measurement each time the drop has covered the Distance timed set beside the stopwatch, in one direction under one field setting; a shorter stretch, cut off by a change of field, a change of direction or the drop leaving the view, is not recorded, and timing pauses while the source is on.</li>
+        </ul>
+
+        <h3>Keyboard</h3>
+        <p>Tab moves between controls; arrow keys move the sliders and, on the row of tabs, between the tabs. Apparatus and Results at the top switch between the two pages. The Plate voltage box takes an exact value (Enter applies it, Escape abandons the edit). With the 3D view focused, the arrow keys turn the model and + and − zoom it. Previous Drop and Next Drop track drops without the mouse, and every reading is in the caption under the view and in the tables. Escape closes Settings, then the chart's tooltip, then presentation mode. Alt + Shift + P (Option + Shift + P on a Mac) switches presentation mode on and off.</p>
+
+        <h3>About this page</h3>
+        <p>Millikan Oil Drop Lab is an interactive teaching page: a simulated oil drop apparatus with a 3D cutaway and an eyepiece view, timing, and the analysis that gives each drop's radius, mass and charge and from them the charge of the electron. Plates 14.92 mm apart, oil density 886 kg/m³, air at 22.0 °C.</p>
       </div>
-      <p id="ana-status" class="verdict" role="status"></p>
-      <div class="chart-wrap">
-        <canvas id="qchart" class="visual qchart" role="img" aria-label="Dot plot of the measured charges along a line from zero, each with a bar for the scatter expected from Brownian motion, and dashed lines at multiples of the trial unit. The charges, their scatter and their nearest multiples are in the table below."></canvas>
-        <div id="qtip" class="tooltip" hidden></div>
-      </div>
-      <ul class="legend" role="list">
-        <li class="lg"><span class="lg-dot" style="--key: var(--series-c)" aria-hidden="true"></span><span>Filled blue dot: one measured charge (stacked when two coincide)</span></li>
-        <li class="lg"><span class="lg-key" style="--key: var(--series-c)" aria-hidden="true"></span><span>Bar through a dot: one standard deviation each way, the scatter expected from Brownian motion</span></li>
-        <li class="lg"><span class="lg-key dashed" style="--key: var(--series-c)" aria-hidden="true"></span><span>Dashed lines: multiples of the trial unit, numbered</span></li>
-        <li class="lg" id="lg-true" hidden><span class="lg-dot hollow" style="--key: var(--series-b)" aria-hidden="true"></span><span>Hollow orange ring: the true charge of that drop (instructor check)</span></li>
-      </ul>
-      <details class="table-view">
-        <summary>Show the Charges as a Table</summary>
-        <div class="table-scroll">
-          <table id="q-table">
-            <caption class="visually-hidden">Measured charges, their expected Brownian scatter and their nearest multiple of the trial unit</caption>
-            <thead>
-              <tr>
-                <th scope="col" class="text">Drop</th>
-                <th scope="col">|q| (10<sup>−19</sup> C)</th>
-                <th scope="col">± scatter (10<sup>−19</sup> C)</th>
-                <th scope="col" class="text">Sign</th>
-                <th scope="col">Multiple n</th>
-                <th scope="col">|q| ÷ n (10<sup>−19</sup> C)</th>
-                <th scope="col">Off by (units)</th>
-                <th scope="col" class="true-col" hidden>True n</th>
-              </tr>
-            </thead>
-            <tbody id="q-body"></tbody>
-          </table>
-        </div>
-      </details>
-    </section>
-
-    <section class="card notes" aria-labelledby="notes-title">
-      <details>
-        <summary><h2 id="notes-title">About the Model</h2></summary>
-        <div class="notes-body">
-          <h3>The experiment</h3>
-          <p>Robert Millikan (1909 to 1913) sprayed oil into the gap between two horizontal metal plates, watched single drops through a scope, and timed them. With the plates shorted a drop falls at a steady speed set by its weight and by the air's drag; with a voltage across the plates a charged drop is pushed up (or down) as well, and moves at a different steady speed. From the two speeds the drop's radius, mass and charge follow. Charging the drops again with ionizing radiation, Millikan found the charge always changed by a whole number of one unit.</p>
-
-          <h3>Working the apparatus</h3>
-          <ol>
-            <li><strong>Spray Oil Drops</strong>, or click the atomizer bulb in the cutaway. The bulb blows a mist from the nozzle into the space above the top plate, and the puff of air carries the drops through the hole in the plate into the gap; the rest land on the plate. Look into the eyepiece and pick one that falls slowly (a small drop) and is sharp at the current focus.</li>
-            <li><strong>Track it</strong> by clicking it, or with the Previous Drop and Next Drop buttons. Keep the source off while timing.</li>
-            <li><strong>Time its fall</strong> with the plates shorted, across a known number of long reticle lines (0.5 mm apart). The Drop Properties panel then shows its radius and mass.</li>
-            <li><strong>Switch the plate voltage on.</strong> The top plate is positive and the bottom plate negative, so a negatively charged drop (most of them) rises; time its rise. A positively charged drop falls faster instead, and its charge follows just the same. Time a fall and a rise more than once if you can.</li>
-            <li><strong>Change its charge.</strong> Expose the ionization source for a few seconds, then time the rise again. A violet ring spreads from a drop at the moment it captures an ion; with the field on you then see it rise or fall at a new speed, and with the field off nothing else changes until the field goes on, because a drop's fall does not depend on its charge. Repeat for several charges on the same drop, and for several drops.</li>
-            <li><strong>Search for Unit of Charge.</strong> All the charges should be whole-number multiples of one value.</li>
-          </ol>
-          <p>Reset Experiment clears the drops, the clock and every measurement and puts the controls back to their starting values, leaving the view as it is; it asks first when there are measurements to lose.</p>
-
-          <h3>The calculation</h3>
-          <p>A drop of radius <em>r</em> and effective density ρ (oil less air) falling at speed <em>v</em><sub>f</sub> has its weight balanced by Stokes drag, corrected for the fact that such small drops slip between the air molecules:</p>
-          <p class="eqn">(4⁄3) π <em>r</em>³ ρ <em>g</em> = 6 π η <em>r</em> <em>v</em><sub>f</sub> ÷ (1 + <em>b</em> ⁄ (<em>p r</em>))</p>
-          <p>which gives the radius from the fall speed, and the mass as <em>m</em> = (4⁄3) π <em>r</em>³ ρ. With the field <em>E</em> = <em>V</em> ⁄ <em>d</em> on and the drop moving at velocity <em>v</em> (up positive), the electric force makes up the difference, so that the charge is</p>
-          <p class="eqn">|<em>q</em>| = <em>m g</em> (1 + <em>v</em> ⁄ <em>v</em><sub>f</sub>) <em>d</em> ⁄ <em>V</em></p>
-          <p>For a drop that rises at speed <em>v</em><sub>r</sub> this is the familiar form (<em>v</em><sub>f</sub> + <em>v</em><sub>r</sub>) ⁄ <em>v</em><sub>f</sub>; a drop that still falls with the field on, only more slowly, gives a charge the same way with <em>v</em> negative. Because the field always points down, a drop that falls faster with the field on than off is positively charged, and the table says so.</p>
-          <p>Constants used: <em>g</em> = 9.80 m/s², ρ = 886 − 1.2 kg/m³, <em>d</em> = 14.92 mm (the gap in Millikan's 1913 condenser), <em>b</em> = 8.20 × 10⁻³ Pa·m, <em>p</em> = 1.013 × 10⁵ Pa, and the viscosity of air at the chamber's 22.0 °C, η = 1.82 × 10⁻⁵ Pa·s. The Charge Calculation panel works through these steps with numbers you type in from the Measurements table, so the same arithmetic the page does for every row can be followed by hand.</p>
-
-          <h3>Finding the unit</h3>
-          <p>The page works out |<em>q</em>| for every timed run with the field on, using the mean fall speed of the same drop. Search for Unit of Charge scans trial values from 4 × 10⁻¹⁹ C downward and takes the largest one whose multiples fit the charges about as well as any unit does (a local minimum of the root-mean-square deviation, within 2.5 times the best), then refines it by least squares and slides the trial unit to it. With only one or two charges almost anything fits: the search needs several drops, or one drop at several charges, and small charges (a few units) are far more useful than large ones, whose errors swamp the steps. With the instructor check on, the search uses the true charges of the measured drops instead of the measured values, which shows what the method gives with perfect timings. The accepted value is <em>e</em> = 1.602 × 10⁻¹⁹ C.</p>
-
-          <h3>What the simulation does</h3>
-          <ul>
-            <li>Each drop has a radius between about 0.35 and 1.3 µm, a charge of a few elementary units (three quarters of them negative), and moves at its terminal velocity, recomputed every frame. A fresh drop rides the puff of air from the bulb: swept toward the 0.8 mm hole in the top plate, through it, and a few millimetres down into the gap before the stream dies away.</li>
-            <li>Drops jitter with Brownian motion of the right size for their radius and the air temperature, which is why repeated timings of the same drop differ slightly, and why very small drops are hard to time.</li>
-            <li>With the source on, each drop captures an air ion about every two seconds, changing its charge by one unit (sometimes two) of either sign. With the source off, a drop's charge never changes.</li>
-            <li>A slow convection current drifts the drops sideways; drops that reach a plate or drift out of the chamber are lost.</li>
-            <li>The scope has a shallow depth of field: only drops near the focal plane are sharp. It shows an upright image; some real scopes invert it.</li>
-            <li>The cutaway is a 3D model of Millikan's apparatus, after the original at Caltech, with a quarter of the chamber cut away. The chamber, scope, lamp and atomizer are at about their true size, and the plates are 14.92 mm apart, as in Millikan's 1913 condenser. At that scale a drop is far too small to see, so the magnified view of the gap draws the drops hundreds of times larger than life. The eyepiece shows the drops at their true relative positions, each as the point of light a real drop scatters.</li>
-            <li>The clock, the stopwatch and the automatic timer all run on simulated time, so the Speed setting changes nothing but your waiting.</li>
-            <li>The automatic timer works while you look through the eyepiece. It notes the moment the tracked drop crosses each long reticle line and records a measurement each time the drop has covered the Distance timed set beside the stopwatch, in one direction under one field setting; a shorter stretch, cut off by a change of field, a change of direction or the drop leaving the view, is not recorded, and timing pauses while the source is on.</li>
-          </ul>
-
-          <h3>Keyboard</h3>
-          <p>Tab moves between controls; arrow keys move the sliders. Previous Drop and Next Drop track drops without the mouse, and every reading is in the Now list and the tables. Escape closes the chart's tooltip. Alt + Shift + P (Option + Shift + P on a Mac) switches presentation mode on and off, and Escape leaves it.</p>
-        </div>
-      </details>
-    </section>
+    </div>
+    </div>
   </main>
 
   <footer class="site-footer">
-    <p>Millikan Oil Drop Lab is an interactive teaching page: a simulated oil drop apparatus with a cutaway and an eyepiece view, timing, and the analysis that gives each drop's radius, mass and charge and from them the charge of the electron. Plates 14.92 mm apart, oil density 886 kg/m³, air at 22.0 °C. Its <a href="https://github.com/analyticalchem/millikan-oil-drop-lab">source code is on GitHub</a>.</p>
-    <p>Part of analyticalchem · <a href="https://analyticalchem.github.io/">All projects</a></p>
+    <p>Millikan Oil Drop Lab, an interactive teaching page · <a href="https://github.com/analyticalchem/millikan-oil-drop-lab">Source code on GitHub</a> · Part of analyticalchem · <a href="https://analyticalchem.github.io/">All projects</a></p>
   </footer>
 
   <p id="present-status" class="visually-hidden" role="status"></p>
 
-  <script src="js/page.js?v=20261019-1"></script>
-  <script src="js/model.js?v=20261019-1"></script>
-  <script src="js/sim.js?v=20261019-1"></script>
-  <script src="js/three-d-stage.js?v=20261019-1"></script>
-  <script src="js/apparatus3d.js?v=20261019-1"></script>
-  <script src="js/eyepiece.js?v=20261019-1"></script>
-  <script src="js/chart.js?v=20261019-1"></script>
-  <script src="js/main.js?v=20261019-1"></script>
+  <script src="js/page.js?v=20261019-2"></script>
+  <script src="js/model.js?v=20261019-2"></script>
+  <script src="js/sim.js?v=20261019-2"></script>
+  <script src="js/three-d-stage.js?v=20261019-2"></script>
+  <script src="js/apparatus3d.js?v=20261019-2"></script>
+  <script src="js/eyepiece.js?v=20261019-2"></script>
+  <script src="js/chart.js?v=20261019-2"></script>
+  <script src="js/main.js?v=20261019-2"></script>
+  <script src="js/layout.js?v=20261019-2"></script>
 </body>
 </html>

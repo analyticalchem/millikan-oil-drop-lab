@@ -7,8 +7,8 @@
   <meta name="description" content="Run a Millikan oil drop experiment: spray drops, watch them through the eyepiece or in a cutaway of the apparatus, time their rise and fall between charged plates, work out each drop's radius, mass and charge, and find the charge of the electron from your own measurements.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Crect%20x='4'%20y='6'%20width='24'%20height='4'%20fill='%23c9a227'/%3E%3Crect%20x='4'%20y='22'%20width='24'%20height='4'%20fill='%23c9a227'/%3E%3Ccircle%20cx='16'%20cy='16'%20r='3.5'%20fill='%23c2410c'/%3E%3C/svg%3E">
   <!-- ?v= tags: change all of them to a new value with every release so browsers fetch the new files. -->
-  <link rel="stylesheet" href="css/styles.css?v=20261019-2">
-  <link rel="stylesheet" href="css/page.css?v=20261019-2">
+  <link rel="stylesheet" href="css/styles.css?v=20261019-3">
+  <link rel="stylesheet" href="css/page.css?v=20261019-3">
   <!-- three.js 0.184 for the 3D cutaway, kept with the page in js/vendor/three (MIT licence there). -->
   <script type="importmap">
   {
@@ -54,7 +54,7 @@
   <main id="main">
 
     <!-- Page 1, the apparatus: the 3D view fills the window; the toolbar above it holds the controls used
-         all the time and a Settings drop-down the rest, and the plate voltage slider runs under the view. -->
+         all the time and a Settings drop-down the rest (the plate voltage slider with its typing box, and the speed). -->
     <div class="page page-instrument" id="page-instrument">
     <section class="card visual-card instrument-card" aria-labelledby="view-title">
       <h2 id="view-title" class="visually-hidden">The Apparatus</h2>
@@ -87,6 +87,18 @@
           <details class="settings" id="settings">
             <summary class="btn">Settings</summary>
             <div class="settings-panel">
+              <div class="settings-group">
+                <h3 class="info-title">Plate Voltage Supply</h3>
+                <div class="control">
+                  <div class="control-head">
+                    <label for="volts">Plate voltage</label>
+                    <span class="entry"><input class="num" id="volts-num" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" aria-label="Plate voltage, in volts" aria-describedby="volts-num-msg"><span class="unit" aria-hidden="true">V</span></span>
+                  </div>
+                  <input id="volts" type="range" min="0" max="1200" step="1" value="600" aria-describedby="volts-sub" autocomplete="off">
+                  <p class="control-sub" id="volts-sub">0 to 1200 V across the 14.92 mm gap; the field is V ÷ d</p>
+                  <p class="num-msg" id="volts-num-msg" role="alert"></p>
+                </div>
+              </div>
               <div class="settings-group">
                 <h3 class="info-title">Simulation</h3>
                 <label class="select">Speed
@@ -196,16 +208,6 @@
           <li class="lg"><span class="lg-key" style="--key: var(--wire-pos)" aria-hidden="true"></span><span>Red lead: + to the top plate; dark lead: − to the bottom plate</span></li>
           <li class="lg"><span class="lg-key" style="--key: var(--eye-reticle)" aria-hidden="true"></span><span>Reticle: lines 0.5 mm apart, ticks 0.1 mm</span></li>
         </ul>
-      </div>
-
-      <div class="volt-bar">
-        <div class="control-head">
-          <label for="volts">Plate voltage</label>
-          <span class="entry"><input class="num" id="volts-num" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" aria-label="Plate voltage, in volts" aria-describedby="volts-num-msg"><span class="unit" aria-hidden="true">V</span></span>
-        </div>
-        <input id="volts" type="range" min="0" max="1200" step="1" value="600" aria-describedby="volts-sub" autocomplete="off">
-        <p class="control-sub" id="volts-sub">0 to 1200 V across the 14.92 mm gap; the field is V ÷ d</p>
-        <p class="num-msg tb-msg" id="volts-num-msg" role="alert"></p>
       </div>
     </section>
     </div>
@@ -403,7 +405,7 @@
         <p class="about-lede">Spray a mist of oil into the chamber, pick a drop, and time it falling under gravity and rising in the electric field between the plates. The fall gives the drop's radius and mass, each timed rise gives its charge, and the charges come in steps: the charge of one electron.</p>
 
         <h3>Using the page</h3>
-        <p>The Apparatus page is the experiment. The toolbar above the view switches the plate voltage and the ionization source, sprays drops, pauses, looks into the eyepiece and tracks drops; Settings holds the speed of the simulation; the Plate voltage slider and its box run under the view. See the results opens this page, which follows the experiment as it runs; Back to the apparatus, or the browser's Back button, returns to it.</p>
+        <p>The Apparatus page is the experiment. The toolbar above the view switches the plate voltage and the ionization source, sprays drops, pauses, looks into the eyepiece and tracks drops; Settings holds the plate voltage slider with its typing box, and the speed of the simulation. See the results opens this page, which follows the experiment as it runs; Back to the apparatus, or the browser's Back button, returns to it.</p>
         <p>In the cutaway you can work the apparatus directly: click the atomizer bulb to spray, the knife switch on the supply to turn the field on or off, Raise and Lower beside the voltmeter to change the voltage (hold to keep going), the lever on the α source to expose or shield it, and the eyepiece to look into it. Drag to turn the model, or focus it and use the arrow keys; hold Ctrl and scroll (or pinch) to zoom, or press + and −; Whole Apparatus and Chamber jump between views; Cutaway puts the missing quarter of the chamber back. The magnified view at the top right shows the gap between the plates. In either view, click a drop to track it, or use the Previous Drop and Next Drop buttons; the tracked drop is ringed in both views. The scope shows an upright image: drops that fall move down.</p>
 
         <h3>The experiment</h3>
@@ -444,7 +446,7 @@
         </ul>
 
         <h3>Keyboard</h3>
-        <p>Tab moves between controls; arrow keys move the sliders and, on the row of tabs, between the tabs. Apparatus and Results at the top switch between the two pages. The Plate voltage box takes an exact value (Enter applies it, Escape abandons the edit). With the 3D view focused, the arrow keys turn the model and + and − zoom it. Previous Drop and Next Drop track drops without the mouse, and every reading is in the caption under the view and in the tables. Escape closes Settings, then the chart's tooltip, then presentation mode. Alt + Shift + P (Option + Shift + P on a Mac) switches presentation mode on and off.</p>
+        <p>Tab moves between controls; arrow keys move the sliders and, on the row of tabs, between the tabs. Apparatus and Results at the top switch between the two pages. The Plate voltage box in Settings takes an exact value (Enter applies it, Escape abandons the edit, and a second Escape closes Settings). With the 3D view focused, the arrow keys turn the model and + and − zoom it. Previous Drop and Next Drop track drops without the mouse, and every reading is in the caption under the view and in the tables. Escape closes Settings, then the chart's tooltip, then presentation mode. Alt + Shift + P (Option + Shift + P on a Mac) switches presentation mode on and off.</p>
 
         <h3>About this page</h3>
         <p>Millikan Oil Drop Lab is an interactive teaching page: a simulated oil drop apparatus with a 3D cutaway and an eyepiece view, timing, and the analysis that gives each drop's radius, mass and charge and from them the charge of the electron. Plates 14.92 mm apart, oil density 886 kg/m³, air at 22.0 °C.</p>
@@ -459,14 +461,14 @@
 
   <p id="present-status" class="visually-hidden" role="status"></p>
 
-  <script src="js/page.js?v=20261019-2"></script>
-  <script src="js/model.js?v=20261019-2"></script>
-  <script src="js/sim.js?v=20261019-2"></script>
-  <script src="js/three-d-stage.js?v=20261019-2"></script>
-  <script src="js/apparatus3d.js?v=20261019-2"></script>
-  <script src="js/eyepiece.js?v=20261019-2"></script>
-  <script src="js/chart.js?v=20261019-2"></script>
-  <script src="js/main.js?v=20261019-2"></script>
-  <script src="js/layout.js?v=20261019-2"></script>
+  <script src="js/page.js?v=20261019-3"></script>
+  <script src="js/model.js?v=20261019-3"></script>
+  <script src="js/sim.js?v=20261019-3"></script>
+  <script src="js/three-d-stage.js?v=20261019-3"></script>
+  <script src="js/apparatus3d.js?v=20261019-3"></script>
+  <script src="js/eyepiece.js?v=20261019-3"></script>
+  <script src="js/chart.js?v=20261019-3"></script>
+  <script src="js/main.js?v=20261019-3"></script>
+  <script src="js/layout.js?v=20261019-3"></script>
 </body>
 </html>

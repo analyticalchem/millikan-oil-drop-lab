@@ -53,7 +53,7 @@ input.switch:checked::before { transform: translateX(1.3em); background: var(--a
 .page-nav a[aria-current="page"] { color: var(--text-primary); border-bottom-color: var(--accent); }
 a.btn { display: inline-block; text-decoration: none; white-space: nowrap; }
 
-/* ---------- The toolbar, the Settings drop-down and the voltage bar (7.18) ---------- */
+/* ---------- The toolbar and the Settings drop-down (7.18) ---------- */
 
 /* Two rows that wrap on a narrow window: row 1 sets up the experiment (the two switches), row 2 runs it
    (the buttons, the status line, Settings and the way to the results). */
@@ -67,12 +67,6 @@ a.btn { display: inline-block; text-decoration: none; white-space: nowrap; }
 .tb-run .go-results { margin-left: auto; }
 /* Reset's confirmation takes a row of its own under the buttons. */
 .tb-run .confirm { flex: 1 1 100%; order: 10; margin: 0; }
-/* A typing box's message opens under the box, over what is below, so the bar keeps its size. */
-.tb-msg {
-  position: absolute; left: 0; top: calc(100% + 4px); z-index: 30; width: max-content; max-width: 22rem;
-  margin: 0; padding: 4px 8px; background: var(--surface); border: 1px solid var(--critical-text); border-radius: 6px;
-}
-.tb-msg:empty { display: none; }
 
 /* Settings: a native disclosure styled as a button with a chevron, filled while open. */
 .settings { position: relative; z-index: 20; }
@@ -97,14 +91,10 @@ html:not(.one-screen) .settings[open] { flex: 1 1 100%; }
 .settings-group .info-title { margin: 0; }
 .settings-group .control-sub { margin: 0; max-width: 32rem; }
 
-/* The plate voltage's slider runs the width of the view, under it, with its typing box. */
-.volt-bar { position: relative; display: grid; grid-template-columns: auto minmax(10rem, 1fr) auto; gap: 4px 16px; align-items: center; margin-top: 8px; }
-.volt-bar .control-head { justify-content: flex-start; gap: 10px; }
-.volt-bar label { font-weight: 600; }
-.volt-bar input[type="range"] { margin: 0; }
-.volt-bar .control-sub { margin: 0; }
-.volt-bar .num { width: 5em; }
-.volt-bar .tb-msg { top: auto; bottom: calc(100% + 4px); }
+/* The plate voltage control in Settings: the label and typing box on one line, the slider under them, its
+   message in the flow under the slider (the panel is a layer of its own, so nothing else moves). */
+.settings-group input[type="range"] { margin: 6px 0 2px; }
+.settings-group .num { width: 5em; }
 
 /* ---------- Apparatus view ---------- */
 
@@ -438,10 +428,6 @@ html:not(.one-screen) .results-card { height: calc(100vh - 6rem); height: calc(1
 
 /* ---------- Responsive ---------- */
 
-@media (max-width: 760px) {
-  .volt-bar { grid-template-columns: minmax(0, 1fr); }
-}
-
 @media (max-width: 980px) {
   .ana-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ana-controls { grid-template-columns: minmax(0, 1fr); }
@@ -479,12 +465,16 @@ html.one-screen .page { height: 100%; }
 html.one-screen .page-instrument { grid-template-rows: minmax(0, 1fr); }
 html.one-screen .page-results { display: flex; flex-direction: column; }
 html.one-screen .page-results > .results-card { flex: 1 1 0; min-height: 0; }
-html.one-screen .instrument-card { display: grid; grid-template-rows: auto minmax(0, 1fr) auto auto; overflow: auto; }
+html.one-screen .instrument-card { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; overflow: auto; }
 /* The status keeps room for two lines, so the view does not change size as the message changes. */
 html.one-screen .tb-run .run-status { min-height: 2.6em; }
-/* The Settings panel opens over the view, under its button, and closes again. */
+/* The Settings panel opens over the view and closes again. It hangs from the run row, flush with the row's
+   right edge, rather than from its button: the button moves along the row as the rows wrap and the labels
+   change, and the row's right edge is always inside the card while the panel is narrower than the row. */
+html.one-screen .tb-run { position: relative; }
+html.one-screen .settings { position: static; }
 html.one-screen .settings-panel {
-  position: absolute; left: 0; top: 100%; width: min(42rem, calc(100vw - 64px));
+  position: absolute; right: 0; top: 100%; width: min(42rem, calc(100vw - 64px));
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 /* The view's box takes the grid's spare row; the bench, the stage and the 3D view fill it, with the
@@ -501,12 +491,11 @@ html.one-screen .stage-caption { margin-top: 6px; }
 html.one-screen .drawing-key { margin-top: 6px; }
 html.one-screen .drawing-key .legend { margin-top: 4px; gap: 4px 18px; }
 /* The Key beside the view (layout.js chooses it when the card is much wider than it is tall). */
-html.one-screen .instrument-card.key-beside { grid-template-columns: minmax(0, 1fr) 15rem; grid-template-rows: auto minmax(0, 1fr) auto; column-gap: 16px; }
-html.one-screen .instrument-card.key-beside > .toolbar, html.one-screen .instrument-card.key-beside > .volt-bar { grid-column: 1 / -1; }
+html.one-screen .instrument-card.key-beside { grid-template-columns: minmax(0, 1fr) 15rem; grid-template-rows: auto minmax(0, 1fr); column-gap: 16px; }
+html.one-screen .instrument-card.key-beside > .toolbar { grid-column: 1 / -1; }
 html.one-screen .instrument-card.key-beside > .drawing-fit { grid-column: 1; grid-row: 2; }
 html.one-screen .instrument-card.key-beside > .drawing-key { grid-column: 2; grid-row: 2; align-self: start; display: block; margin-top: 16px; }
 html.one-screen .instrument-card.key-beside .drawing-key .legend { grid-template-columns: minmax(0, 1fr); gap: 8px; }
-html.one-screen .instrument-card.key-beside > .volt-bar { grid-row: 3; }
 
 /* ---------- Presentation mode ---------- */
 

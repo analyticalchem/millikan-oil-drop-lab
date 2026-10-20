@@ -71,11 +71,13 @@
   // --- the Settings drop-down ---
 
   var settings = $('settings');
-  // Escape closes it first (before presentation mode, and not while editing a typing box outside it), and
-  // focus goes back to its button; a click or tap anywhere outside it closes it, as a drop-down does.
+  // Escape closes it first (before presentation mode) and focus goes back to its button, except when that Escape
+  // is abandoning an edit in a typing box: the box inside it (the plate voltage) keeps its Escape, and the
+  // next one closes the panel. A click or tap anywhere outside it closes it, as a drop-down does.
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape' || !settings.open) return;
-    if (e.target.classList && e.target.classList.contains('num') && !settings.contains(e.target)) return;
+    var box = e.target.classList && e.target.classList.contains('num');
+    if (box && (!settings.contains(e.target) || e.target._editing)) return;
     e.stopPropagation();
     e.preventDefault();
     settings.open = false;

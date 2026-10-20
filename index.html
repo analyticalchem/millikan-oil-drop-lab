@@ -6,8 +6,9 @@
   <title>Millikan Oil Drop Lab</title>
   <meta name="description" content="Run a Millikan oil drop experiment: spray drops, watch them through the eyepiece or in a cutaway of the apparatus, time their rise and fall between charged plates, work out each drop's radius, mass and charge, and find the charge of the electron from your own measurements.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Crect%20x='4'%20y='6'%20width='24'%20height='4'%20fill='%23c9a227'/%3E%3Crect%20x='4'%20y='22'%20width='24'%20height='4'%20fill='%23c9a227'/%3E%3Ccircle%20cx='16'%20cy='16'%20r='3.5'%20fill='%23c2410c'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="css/styles.css">
-  <link rel="stylesheet" href="css/page.css">
+  <!-- ?v= tags: change all of them to a new value with every release so browsers fetch the new files. -->
+  <link rel="stylesheet" href="css/styles.css?v=20261019-1">
+  <link rel="stylesheet" href="css/page.css?v=20261019-1">
   <!-- three.js 0.184 for the 3D cutaway, kept with the page in js/vendor/three (MIT licence there). -->
   <script type="importmap">
   {
@@ -110,7 +111,7 @@
       <div id="bench" class="bench">
         <div id="stage" class="stage">
           <div class="view-cutaway" id="cutaway-box">
-            <three-d-stage id="app" class="app3d" name="millikan-oil-drop-apparatus" wheel-zoom="modifier" no-export tabindex="0" note="Drag or arrow keys to turn · Ctrl + scroll, pinch or + and − to zoom · Right-drag to pan" role="group" aria-labelledby="app-title" aria-describedby="app-desc"></three-d-stage>
+            <three-d-stage id="app" class="app3d visual" name="millikan-oil-drop-apparatus" wheel-zoom="modifier" no-export tabindex="0" note="Drag or arrow keys to turn · Ctrl + scroll, pinch or + and − to zoom · Right-drag to pan" role="group" aria-labelledby="app-title" aria-describedby="app-desc"></three-d-stage>
             <div class="app3d-overlay" aria-hidden="true">
               <svg class="app3d-leaders" id="app-leaders"></svg>
               <div class="app3d-inset" id="app-inset"><span class="app3d-inset-title">Between the plates, magnified</span></div>
@@ -435,13 +436,13 @@
 
   <p id="present-status" class="visually-hidden" role="status"></p>
 
-  <script src="js/page.js"></script>
-  <script src="js/model.js"></script>
-  <script src="js/sim.js"></script>
-  <script src="js/three-d-stage.js"></script>
-  <script src="js/apparatus3d.js"></script>
-  <script src="js/eyepiece.js"></script>
-  <script src="js/chart.js"></script>
-  <script src="js/main.js"></script>
+  <script src="js/page.js?v=20261019-1"></script>
+  <script src="js/model.js?v=20261019-1"></script>
+  <script src="js/sim.js?v=20261019-1"></script>
+  <script src="js/three-d-stage.js?v=20261019-1"></script>
+  <script src="js/apparatus3d.js?v=20261019-1"></script>
+  <script src="js/eyepiece.js?v=20261019-1"></script>
+  <script src="js/chart.js?v=20261019-1"></script>
+  <script src="js/main.js?v=20261019-1"></script>
 </body>
 </html>

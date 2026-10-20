@@ -93,28 +93,17 @@ input.switch:checked::before { transform: translateX(1.3em); background: var(--a
 
 /* The drawing keeps its aspect ratio; below its minimum width it scrolls sideways inside the box.
    Zooming in scales it up about the eyepiece lens (the origin is set by script). */
-/* The 3D cutaway keeps a 16 : 10 shape above a least height; it fades out as the camera flies into the
-   eyepiece. Labels, the frame of the magnified view and the hover tip are page elements laid over it. */
+/* The 3D cutaway is the page's main visual: 16 : 10 of the window's width until the window's height caps it
+   at 70 % (style guide 4; presenting, 1.5 times that, capped at 80 %), and the camera reframes the model to
+   whatever shape that gives. It fades out as the camera flies into the eyepiece. Labels, the frame of the
+   magnified view and the hover tip are page elements laid over it. */
 three-d-stage:not(:defined) { visibility: hidden; }
 .view-cutaway { transition: opacity 0.9s ease-in; }
 .stage.in-eye .view-cutaway { opacity: 0; }
 .app3d {
-  display: block;
-  width: 100%;
-  height: auto;
-  aspect-ratio: 16 / 10;
-  min-height: 340px;
+  --h: clamp(340px, 60vw, max(380px, 70vh));
   --stage-bg: var(--surface-2);
   border-radius: 10px;
-}
-/* Wide screens: a tall window gets a taller view (never more than 84 % of it); the camera reframes the model to the shape. */
-@media (min-width: 981px) {
-  .app3d { min-height: clamp(340px, 62vh, 960px); max-height: 84vh; }
-}
-/* Large screens: the column grows with the window (the house 1200 px becomes the floor, 1800 px the ceiling),
-   so the apparatus view uses the screen instead of sitting in a fixed-width band. */
-@media (min-width: 1500px) {
-  .site-header, main, .site-footer { max-width: min(1800px, 90vw); }
 }
 .app3d-overlay { position: absolute; inset: 0; pointer-events: none; overflow: hidden; border-radius: 10px; }
 .app3d-leaders { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
@@ -352,7 +341,7 @@ three-d-stage:not(:defined) { visibility: hidden; }
 .chart-card .verdict { margin-top: 12px; }
 .chart-card .verdict:empty { margin: 0; }
 .chart-wrap { position: relative; margin-top: 12px; }
-.qchart { --h: clamp(200px, 24vw, 280px); }
+.qchart { --h: clamp(200px, 24vw, max(280px, 40vh)); }
 .table-view { margin-top: 12px; }
 .table-view summary { cursor: pointer; font-weight: 600; color: var(--text-secondary); }
 
@@ -389,5 +378,4 @@ three-d-stage:not(:defined) { visibility: hidden; }
   html[data-present] .fx-in { font-size: 1rem; }
   html[data-present] .sw-display { font-size: 2.4rem; }
   html[data-present] .stage.eye-size { min-height: 560px; }
-  html[data-present] .app3d { min-height: 480px; }
 }

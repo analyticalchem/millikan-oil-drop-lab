@@ -208,12 +208,19 @@ sup { font-size: max(78%, 0.75rem); line-height: 0; }
 
 /* ---------- Header ---------- */
 
+/* Pages fill the window (style guide 4): only running text keeps a reading measure. */
 .site-header, main, .site-footer {
-  max-width: 1200px;
+  width: 100%;
   margin: 0 auto;
   padding-left: 24px;
   padding-right: 24px;
 }
+
+/* Large screens: the root steps up so text and controls keep proportion with the bigger panels. Both a
+   width and a height are needed, so a wide but short window keeps the normal size; presentation mode's
+   own root size still wins. */
+@media (min-width: 1600px) and (min-height: 900px) { html { font-size: 112.5%; } }
+@media (min-width: 2200px) and (min-height: 1200px) { html { font-size: 125%; } }
 
 .site-header { padding-top: 28px; padding-bottom: 12px; }
 
@@ -360,8 +367,9 @@ select option:disabled { color: var(--text-muted); }
 
 /* ---------- Visuals ---------- */
 
-/* Heights live in --h so presentation mode can scale them. */
-.visual { display: block; width: 100%; height: var(--h); }
+/* Heights live in --h so presentation mode can scale them; the cap grows with the window's height, so a
+   visual gets taller on a big screen instead of turning into a wide, flat strip. Pages set their own --h. */
+.visual { display: block; width: 100%; --h: clamp(260px, 32vw, max(380px, 55vh)); height: var(--h); }
 
 /* Legends are a grid, one entry per cell, so the entries line up in columns and a long
    entry wraps inside its own cell. Each swatch sits in a 26 px column, centred on the
@@ -471,7 +479,7 @@ html[data-present] .present-hint { display: block; margin: 12px 0 0; color: var(
 @media (min-width: 900px) {
   html[data-present] { font-size: 125%; }
   html[data-present] body { font-size: 1rem; }
-  html[data-present] .site-header, html[data-present] main { max-width: none; padding-left: 32px; padding-right: 32px; }
+  html[data-present] .site-header, html[data-present] main { padding-left: 32px; padding-right: 32px; }
   html[data-present] main { gap: 20px; }
   html[data-present] h1 { font-size: 2.8rem; }
   html[data-present] h2, html[data-present] .notes summary { font-size: 1.5rem; }
@@ -481,7 +489,7 @@ html[data-present] .present-hint { display: block; margin: 12px 0 0; color: var(
   html[data-present] input[type="range"] { height: 36px; }
   html[data-present] .check input { width: 24px; height: 24px; }
   html[data-present] .btn { padding: 12px 24px; }
-  html[data-present] .visual { height: calc(var(--h) * 1.5); }
+  html[data-present] .visual { height: min(calc(var(--h) * 1.5), 80vh); }
   html[data-present] .tooltip { font-size: 1rem; min-width: 220px; }
   html[data-present] :is(a, button, input, select, summary, [tabindex]):focus-visible { outline-width: 3px; outline-offset: 3px; }
 

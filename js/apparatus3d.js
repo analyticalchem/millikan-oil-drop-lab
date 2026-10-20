@@ -1385,9 +1385,10 @@
   }
 
   /** Height of the view at a given width (it keeps a 16 : 10 shape above its least height). */
+  /** Height of the view at a given width: the stylesheet sets it from the window, not the width, so it is the present height. */
   function heightFor(w) {
-    var minH = stage ? parseFloat(getComputedStyle(stage).minHeight) || 0 : 0;
-    return Math.max(minH, w * 10 / 16);
+    var h = stage ? stage.clientHeight || parseFloat(getComputedStyle(stage).height) : 0;
+    return h > 0 ? h : w * 10 / 16;
   }
 
   function fit() { /* the stage follows its own size */ }
